@@ -1,6 +1,6 @@
 import { getLocale } from 'next-intl/server'
 import { Footer } from '@/components/Footer'
-import { ChatWidget } from '@/components/chatbot/ChatWidget'
+import { ChatWidgetLoader } from '@/components/chatbot/ChatWidgetLoader'
 
 export default async function MarketingLayout({
   children,
@@ -13,7 +13,7 @@ export default async function MarketingLayout({
     <>
       {children}
       <Footer />
-      <ChatWidget locale={locale} />
+      <ChatWidgetLoader locale={locale} />
     </>
   )
 }

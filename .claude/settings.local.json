@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(node -e \"console.log\\(require\\('/Users/joseurizar/Desktop/Projects/nell_pickleball_update/simplenellpickleballsite/node_modules/stripe/package.json'\\).version\\)\")",
+      "Bash(node -e \"const p=require\\('/Users/joseurizar/Desktop/Projects/nell_pickleball_update/simplenellpickleballsite/node_modules/stripe/package.json'\\); console.log\\(JSON.stringify\\({types:p.types,typings:p.typings,main:p.main,exports:p.exports},null,2\\)\\)\")",
+      "Bash(python3 -)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(npx vitest *)",
+      "Bash(npm run *)",
+      "Bash(cp /private/tmp/claude-501/-Users-joseurizar-Desktop-Projects-nell-pickleball-update-simplenellpickleballsite/93536978-aea4-4e40-8c80-6ff907881dbd/scratchpad/verify-db.mjs ./verify-db.mjs)",
+      "Bash(node verify-db.mjs)",
+      "Bash(rm -f ./verify-db.mjs)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/en)",
+      "Bash(curl -s http://localhost:3001/en)",
+      "Bash(curl -s http://localhost:3001/)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s http://localhost:3005/en)",
+      "Bash(curl -s http://localhost:3005/)",
+      "Bash(grep -iE \"make-pdf|\\\\.html$|verify-db\")",
+      "Bash(git rm *)",
+      "Bash(cd *)",
+      "Bash(echo \"--- tsc exit: $? ---\")",
+      "Bash(npx next *)",
+      "Bash(stripe --version)",
+      "Bash(git clone:*)",
+      "Bash(ls next.config.*)",
+      "Bash(cat next.config.*)",
+      "Bash(curl:*)",
+      "Bash(taskkill:*)",
+      "WebFetch(domain:www.pickleheads.com)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)"
+    ]
+  }
+}

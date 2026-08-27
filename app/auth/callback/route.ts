@@ -5,7 +5,9 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const rawNext = searchParams.get('next') ?? '/'
+  // Prevent open redirect: must be a relative path, no protocol or double-slash
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
 
   if (code) {
     const supabase = await createClient()

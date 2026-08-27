@@ -4,8 +4,22 @@ import { requireAdmin } from './auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { resend } from '@/lib/resend'
 import type { UserWithDetails } from '@/lib/types/admin'
+import type { PaymentStatus, PaymentMethod } from '@/lib/types/sessions'
 
 const USER_PAGE_SIZE = 25
+
+/** One row of a user's play-session history, as rendered in the admin slide-out. */
+export interface UserSignupHistoryRow {
+  id: string
+  session_date: string
+  payment_status: PaymentStatus
+  payment_method: PaymentMethod
+  amount_cents: number
+  currency: string
+  title_en: string | null
+  title_es: string | null
+  start_time: string | null
+}
 
 /**
  * Search users by name, email, or phone. Returns paginated results.
@@ -26,7 +40,9 @@ export async function searchUsersAction(
     .select('id, first_name, last_name, phone, country, email, last_sign_in_at, banned_until, created_at', { count: 'exact' })
 
   if (trimmed) {
-    const term = `%${trimmed}%`
+    // Escape PostgREST special characters to prevent filter injection
+    const escaped = trimmed.replace(/[%_\\,().]/g, '')
+    const term = `%${escaped}%`
     q = q.or(`first_name.ilike.${term},last_name.ilike.${term},email.ilike.${term},phone.ilike.${term}`)
   }
 
@@ -93,13 +109,37 @@ export async function getUserDetailsAction(userId: string) {
     .eq('user_id', userId)
     .maybeSingle()
 
-  // Fetch reservation history (last 20)
-  const { data: reservations } = await supabaseAdmin
-    .from('reservations')
-    .select('id, court_id, starts_at, ends_at, status, booking_mode, payment_status')
-    .eq('user_id', userId)
-    .order('starts_at', { ascending: false })
-    .limit(20)
+  // Fetch play-session sign-up history (last 20).
+  //
+  // session_signups has no user_id — sign-ups are open to anyone with an email,
+  // members included — so email is the only link back to an account. Stored
+  // lowercased by book_session_spot(), and matched that way here.
+  const email = viewUser.email?.toLowerCase() ?? null
+  const { data: signupRows } = email
+    ? await supabaseAdmin
+        .from('session_signups')
+        .select('id, session_date, payment_status, payment_method, amount_cents, currency, play_sessions(title_en, title_es, start_time)')
+        .eq('email', email)
+        .order('session_date', { ascending: false })
+        .limit(20)
+    : { data: [] }
+
+  // Flatten the joined play_sessions row — PostgREST types the embed as an
+  // array even on a to-one relationship.
+  const signups: UserSignupHistoryRow[] = (signupRows ?? []).map((row) => {
+    const session = Array.isArray(row.play_sessions) ? row.play_sessions[0] : row.play_sessions
+    return {
+      id: row.id,
+      session_date: row.session_date,
+      payment_status: row.payment_status as PaymentStatus,
+      payment_method: row.payment_method as PaymentMethod,
+      amount_cents: row.amount_cents,
+      currency: row.currency,
+      title_en: session?.title_en ?? null,
+      title_es: session?.title_es ?? null,
+      start_time: session?.start_time ?? null,
+    }
+  })
 
   return {
     id: viewUser.id,
@@ -119,15 +159,23 @@ export async function getUserDetailsAction(userId: string) {
           current_period_end: membership.current_period_end,
         }
       : null,
-    reservations: reservations ?? [],
+    signups: signups ?? [],
   }
 }
 
 /**
- * Disable a user account (ban) and auto-cancel their future reservations.
+ * Disable a user account (ban) and cancel their upcoming session sign-ups,
+ * freeing those spots for other players.
  */
 export async function disableUserAction(userId: string) {
   await requireAdmin()
+
+  // Look up the email before banning — it's the only link to session_signups.
+  const { data: viewUser } = await supabaseAdmin
+    .from('admin_users_view')
+    .select('email')
+    .eq('id', userId)
+    .single()
 
   // Ban the user for ~100 years
   const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
@@ -135,13 +183,24 @@ export async function disableUserAction(userId: string) {
   })
   if (banError) throw banError
 
-  // Auto-cancel future reservations
-  await supabaseAdmin
-    .from('reservations')
-    .update({ status: 'cancelled' })
-    .eq('user_id', userId)
-    .gt('starts_at', new Date().toISOString())
-    .in('status', ['confirmed', 'pending_payment'])
+  // Cancel upcoming sign-ups. session_date is a plain date, so compare against
+  // today in club time rather than a UTC timestamp.
+  const email = viewUser?.email?.toLowerCase()
+  if (email) {
+    const clubToday = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Santo_Domingo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date())
+
+    await supabaseAdmin
+      .from('session_signups')
+      .update({ payment_status: 'cancelled', hold_expires_at: null, updated_at: new Date().toISOString() })
+      .eq('email', email)
+      .gte('session_date', clubToday)
+      .in('payment_status', ['pending', 'paid'])
+  }
 
   return { success: true }
 }

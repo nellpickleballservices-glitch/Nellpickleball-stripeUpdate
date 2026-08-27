@@ -8,16 +8,18 @@ interface StatCardProps {
 
 export function StatCard({ title, value, icon }: StatCardProps) {
   return (
-    <div className="bg-[#1E293B] rounded-lg p-6 relative">
+    <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 shadow-sm flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <p className="text-gray-600 text-sm">{title}</p>
+        <p className="text-3xl font-bold text-midnight mt-2">
+          {value.toLocaleString()}
+        </p>
+      </div>
       {icon && (
-        <span className="absolute top-4 right-4 text-offwhite/20">
+        <span className="text-gray-300 shrink-0">
           {icon}
         </span>
       )}
-      <p className="text-white/90 text-sm">{title}</p>
-      <p className="text-3xl font-bold text-offwhite mt-2">
-        {value.toLocaleString()}
-      </p>
     </div>
   )
 }

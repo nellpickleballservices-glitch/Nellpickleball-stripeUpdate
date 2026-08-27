@@ -13,9 +13,9 @@ describe('RLS policies', () => {
     it.todo('user can read their own membership row')
     it.todo('user cannot read another user\'s membership row')
   })
-  describe('reservations table', () => {
-    it.todo('RLS is enabled on reservations table')
-    it.todo('user can read their own reservation rows')
-    it.todo('user cannot read another user\'s reservation rows')
+  describe('session_signups table', () => {
+    it.todo('RLS is enabled on session_signups table')
+    it.todo('anon cannot read any sign-up rows (rosters hold other players\' contact info)')
+    it.todo('service role can read and write sign-up rows')
   })
 })

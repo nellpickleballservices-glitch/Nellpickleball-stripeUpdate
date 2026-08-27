@@ -46,12 +46,12 @@ export default function ResetPasswordForm() {
           type="email"
           autoComplete="email"
           required
-          className="bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
+          className="bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
         />
       </div>
 
       {state.message && (
-        <p className="text-red-400 text-sm text-center">{state.message}</p>
+        <p className="text-red-300 text-sm text-center">{state.message}</p>
       )}
 
       <button

@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { getUserDetailsAction, disableUserAction, enableUserAction, triggerPasswordResetAction, updateUserCountryAction } from '@/app/actions/admin'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { countryByCode } from '@/lib/data/countries'
 import { CountrySelect } from '@/components/CountrySelect'
+import { formatSessionDate, formatSessionTime } from '@/lib/sessions'
+import type { PaymentStatus } from '@/lib/types/sessions'
 
 interface UserSlideOutProps {
   userId: string | null
@@ -14,8 +16,16 @@ interface UserSlideOutProps {
 
 type UserDetails = Awaited<ReturnType<typeof getUserDetailsAction>>
 
+const SIGNUP_STATUS_STYLES: Record<PaymentStatus, string> = {
+  paid: 'bg-green-100 text-green-700',
+  pending: 'bg-amber-100 text-amber-700',
+  cancelled: 'bg-gray-100 text-gray-600',
+  refunded: 'bg-purple-100 text-purple-700',
+}
+
 export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
   const t = useTranslations('Admin')
+  const locale = useLocale()
   const [details, setDetails] = useState<UserDetails | null>(null)
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -104,14 +114,14 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
 
       {/* Slide-out panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-96 bg-[#1E293B] border-l border-gray-700 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 right-0 h-full w-96 bg-white border-l border-gray-200 shadow-xl z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
           userId ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-white/90 hover:text-offwhite transition-colors"
+          className="absolute top-4 right-4 text-gray-600 hover:text-midnight transition-colors"
         >
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -121,39 +131,39 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
         <div className="p-6">
           {loading ? (
             <div className="space-y-4 animate-pulse">
-              <div className="h-12 w-12 bg-gray-700 rounded-full" />
-              <div className="h-4 bg-gray-700 rounded w-3/4" />
-              <div className="h-4 bg-gray-700 rounded w-1/2" />
-              <div className="h-4 bg-gray-700 rounded w-2/3" />
-              <div className="h-32 bg-gray-700 rounded mt-6" />
+              <div className="h-12 w-12 bg-gray-200 rounded-full" />
+              <div className="h-4 bg-gray-200 rounded w-3/4" />
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-4 bg-gray-200 rounded w-2/3" />
+              <div className="h-32 bg-gray-200 rounded mt-6" />
             </div>
           ) : details ? (
             <>
               {/* Profile Section */}
               <div className="mb-6">
-                <h3 className="text-xs uppercase tracking-wider text-white/90 font-medium mb-3">
+                <h3 className="text-xs uppercase tracking-wider text-gray-600 font-medium mb-3">
                   {t('profile')}
                 </h3>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="h-12 w-12 rounded-full bg-lime/20 flex items-center justify-center text-lime font-bold text-lg">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg">
                     {details.first_name.charAt(0)}{details.last_name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-offwhite font-semibold">
+                    <p className="text-midnight font-semibold">
                       {details.first_name} {details.last_name}
                     </p>
-                    <p className="text-white/90 text-sm">{details.email}</p>
+                    <p className="text-gray-600 text-sm">{details.email}</p>
                   </div>
                 </div>
                 <div className="space-y-2 text-sm">
                   {details.phone && (
                     <div className="flex justify-between">
-                      <span className="text-white/90">{t('userPhone')}</span>
-                      <span className="text-offwhite">{details.phone}</span>
+                      <span className="text-gray-600">{t('userPhone')}</span>
+                      <span className="text-midnight">{details.phone}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-start">
-                    <span className="text-white/90">{t('userCountry')}</span>
+                    <span className="text-gray-600">{t('userCountry')}</span>
                     {editingCountry ? (
                       <div className="w-48">
                         <CountrySelect
@@ -175,14 +185,14 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-offwhite">
+                        <span className="text-midnight">
                           {details.country
                             ? `${countryByCode.get(details.country)?.flag ?? ''} ${countryByCode.get(details.country)?.nameEn ?? details.country}`
                             : 'N/A'}
                         </span>
                         <button
                           onClick={() => setEditingCountry(true)}
-                          className="text-turquoise text-xs hover:underline"
+                          className="text-blue-600 text-xs hover:underline"
                         >
                           {t('edit')}
                         </button>
@@ -190,14 +200,14 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
                     )}
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-white/90">{t('joinedDate')}</span>
-                    <span className="text-offwhite">
+                    <span className="text-gray-600">{t('joinedDate')}</span>
+                    <span className="text-midnight">
                       {new Date(details.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   {details.is_banned && (
                     <div className="mt-2">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
                         {t('userBanned')}
                       </span>
                     </div>
@@ -206,22 +216,22 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
               </div>
 
               {/* Membership Section */}
-              <div className="mb-6 pt-4 border-t border-gray-700">
-                <h3 className="text-xs uppercase tracking-wider text-white/90 font-medium mb-3">
+              <div className="mb-6 pt-4 border-t border-gray-200">
+                <h3 className="text-xs uppercase tracking-wider text-gray-600 font-medium mb-3">
                   {t('membership')}
                 </h3>
                 {details.membership ? (
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-white/90">{t('userPlan')}</span>
-                      <span className="text-offwhite capitalize">{details.membership.plan}</span>
+                      <span className="text-gray-600">{t('userPlan')}</span>
+                      <span className="text-midnight capitalize">{details.membership.plan}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-white/90">{t('userStatus')}</span>
-                      <span className={`text-sm ${
-                        details.membership.status === 'active' ? 'text-green-400' :
-                        details.membership.status === 'past_due' ? 'text-yellow-400' :
-                        'text-red-400'
+                      <span className="text-gray-600">{t('userStatus')}</span>
+                      <span className={`text-sm font-medium ${
+                        details.membership.status === 'active' ? 'text-green-700' :
+                        details.membership.status === 'past_due' ? 'text-yellow-700' :
+                        'text-red-700'
                       }`}>
                         {details.membership.status === 'active' ? t('membershipActive') :
                          details.membership.status === 'past_due' ? t('membershipPastDue') :
@@ -230,8 +240,8 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
                     </div>
                     {details.membership.current_period_end && (
                       <div className="flex justify-between">
-                        <span className="text-white/90">Period End</span>
-                        <span className="text-offwhite">
+                        <span className="text-gray-600">Period End</span>
+                        <span className="text-midnight">
                           {new Date(details.membership.current_period_end).toLocaleDateString()}
                         </span>
                       </div>
@@ -242,46 +252,41 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
                 )}
               </div>
 
-              {/* Reservation History */}
-              <div className="mb-6 pt-4 border-t border-gray-700">
-                <h3 className="text-xs uppercase tracking-wider text-white/90 font-medium mb-3">
-                  {t('reservationHistory')}
+              {/* Session sign-up history */}
+              <div className="mb-6 pt-4 border-t border-gray-200">
+                <h3 className="text-xs uppercase tracking-wider text-gray-600 font-medium mb-3">
+                  {t('signupHistory')}
                 </h3>
-                {details.reservations.length === 0 ? (
-                  <p className="text-gray-500 text-sm">{t('noReservationsUser')}</p>
+                {details.signups.length === 0 ? (
+                  <p className="text-gray-500 text-sm">{t('noSignupsUser')}</p>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {details.reservations.map((res) => (
-                      <div
-                        key={res.id}
-                        className="flex items-center justify-between text-sm bg-midnight/50 rounded-lg px-3 py-2"
-                      >
-                        <div>
-                          <p className="text-offwhite">
-                            {new Date(res.starts_at).toLocaleDateString()}
-                          </p>
-                          <p className="text-white/90 text-xs">
-                            {new Date(res.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            {' - '}
-                            {new Date(res.ends_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                    {details.signups.map((signup) => {
+                      const title = locale === 'es' ? signup.title_es : signup.title_en
+                      return (
+                        <div
+                          key={signup.id}
+                          className="flex items-center justify-between gap-3 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-midnight truncate">{title ?? '—'}</p>
+                            <p className="text-gray-600 text-xs">
+                              {formatSessionDate(signup.session_date, locale)}
+                              {signup.start_time && ` · ${formatSessionTime(signup.start_time, locale)}`}
+                            </p>
+                          </div>
+                          <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${SIGNUP_STATUS_STYLES[signup.payment_status]}`}>
+                            {t(`signupStatus_${signup.payment_status}`)}
+                          </span>
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          res.status === 'confirmed' ? 'bg-green-900/50 text-green-300' :
-                          res.status === 'cancelled' ? 'bg-red-900/50 text-red-300' :
-                          res.status === 'pending_payment' ? 'bg-yellow-900/50 text-yellow-300' :
-                          'bg-gray-700 text-white'
-                        }`}>
-                          {res.status}
-                        </span>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Actions */}
-              <div className="pt-4 border-t border-gray-700 space-y-3">
+              <div className="pt-4 border-t border-gray-200 space-y-3">
                 {details.is_banned ? (
                   <button
                     onClick={() => openConfirm('enable')}
@@ -299,7 +304,7 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
                 )}
                 <button
                   onClick={() => openConfirm('reset')}
-                  className="w-full px-4 py-2 text-sm font-semibold rounded-lg bg-gray-700 hover:bg-gray-600 text-offwhite transition-colors"
+                  className="w-full px-4 py-2 text-sm font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-midnight border border-gray-200 transition-colors"
                 >
                   {t('triggerReset')}
                 </button>
@@ -309,8 +314,8 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
               {message && (
                 <div className={`mt-4 px-3 py-2 rounded-lg text-sm ${
                   message.type === 'success'
-                    ? 'bg-green-900/30 text-green-300'
-                    : 'bg-red-900/30 text-red-300'
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : 'bg-red-50 border border-red-200 text-red-700'
                 }`}>
                   {message.text}
                 </div>

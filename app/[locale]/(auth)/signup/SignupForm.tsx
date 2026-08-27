@@ -124,9 +124,9 @@ export default function SignupForm() {
           required
           defaultValue={state.fields?.firstName ?? ''}
           onBlur={(e) => handleNameBlur('firstName', e.target.value, setFirstNameError)}
-          className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
+          className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
         />
-        {firstErr && <p className="text-red-400 text-sm mt-1">{firstErr}</p>}
+        {firstErr && <p className="text-red-300 text-sm mt-1">{firstErr}</p>}
       </div>
 
       {/* Last Name */}
@@ -142,9 +142,9 @@ export default function SignupForm() {
           required
           defaultValue={state.fields?.lastName ?? ''}
           onBlur={(e) => handleNameBlur('lastName', e.target.value, setLastNameError)}
-          className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
+          className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
         />
-        {lastErr && <p className="text-red-400 text-sm mt-1">{lastErr}</p>}
+        {lastErr && <p className="text-red-300 text-sm mt-1">{lastErr}</p>}
       </div>
 
       {/* Email */}
@@ -159,7 +159,7 @@ export default function SignupForm() {
           autoComplete="email"
           required
           defaultValue={state.fields?.email ?? ''}
-          className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
+          className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
         />
       </div>
 
@@ -174,7 +174,7 @@ export default function SignupForm() {
           type="tel"
           autoComplete="tel"
           defaultValue={state.fields?.phone ?? ''}
-          className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
+          className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
         />
       </div>
 
@@ -187,7 +187,7 @@ export default function SignupForm() {
           defaultValue={state.fields?.country ?? 'DO'}
         />
         {state.errors?.country && (
-          <p className="text-red-400 text-sm mt-1">{state.errors.country}</p>
+          <p className="text-red-300 text-sm mt-1">{state.errors.country}</p>
         )}
       </div>
 
@@ -205,7 +205,7 @@ export default function SignupForm() {
             autoComplete="new-password"
             required
             minLength={8}
-            className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 pr-11 outline-none transition-colors"
+            className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 pr-11 outline-none transition-colors"
           />
           <button
             type="button"
@@ -217,7 +217,7 @@ export default function SignupForm() {
           </button>
         </div>
         {state.errors?.password && (
-          <p className="text-red-400 text-sm mt-1">{state.errors.password}</p>
+          <p className="text-red-300 text-sm mt-1">{state.errors.password}</p>
         )}
       </div>
 
@@ -234,7 +234,7 @@ export default function SignupForm() {
             type={showConfirm ? 'text' : 'password'}
             autoComplete="new-password"
             required
-            className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 pr-11 outline-none transition-colors"
+            className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 pr-11 outline-none transition-colors"
           />
           <button
             type="button"
@@ -246,7 +246,7 @@ export default function SignupForm() {
           </button>
         </div>
         {(passwordMismatch || state.errors?.confirmPassword) && (
-          <p className="text-red-400 text-sm mt-1">
+          <p className="text-red-300 text-sm mt-1">
             {passwordMismatch ?? state.errors?.confirmPassword}
           </p>
         )}
@@ -254,7 +254,7 @@ export default function SignupForm() {
 
       {/* Global error message */}
       {state.message && (
-        <p className="lg:col-span-2 text-red-400 text-sm text-center">{state.message}</p>
+        <p className="lg:col-span-2 text-red-300 text-sm text-center">{state.message}</p>
       )}
 
       {/* Submit */}

@@ -22,7 +22,7 @@ export function CourtDiagram({ locale }: CourtDiagramProps) {
           role="img"
           aria-label={locale === 'en' ? 'Pickleball court diagram' : 'Diagrama de cancha de pickleball'}
         >
-          <rect x="0" y="0" width="240" height="480" fill="#0F172A" rx="8" />
+          <rect x="0" y="0" width="240" height="480" fill="#1C305D" rx="8" />
           <rect x="20" y="20" width="200" height="440" fill="none" stroke="#A3FF12" strokeWidth="2" />
           <line x1="20" y1="240" x2="220" y2="240" stroke="#F5F5F5" strokeWidth="3" />
           <rect x="20" y="170" width="200" height="70" fill="#38BDF8" fillOpacity="0.15" stroke="#38BDF8" strokeWidth="1.5" />
@@ -47,7 +47,7 @@ export function CourtDiagram({ locale }: CourtDiagramProps) {
           role="img"
           aria-label={locale === 'en' ? 'Pickleball court diagram' : 'Diagrama de cancha de pickleball'}
         >
-          <rect x="0" y="0" width="520" height="280" fill="#0F172A" rx="8" />
+          <rect x="0" y="0" width="520" height="280" fill="#1C305D" rx="8" />
 
           {/* Court outline */}
           <rect x="20" y="20" width="480" height="240" fill="none" stroke="#A3FF12" strokeWidth="2" />

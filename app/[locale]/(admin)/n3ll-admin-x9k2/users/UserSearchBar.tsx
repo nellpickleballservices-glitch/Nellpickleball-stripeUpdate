@@ -22,7 +22,7 @@ export function UserSearchBar({ onSearch }: UserSearchBarProps) {
   return (
     <div className="relative">
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/90"
+        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -39,7 +39,7 @@ export function UserSearchBar({ onSearch }: UserSearchBarProps) {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={t('searchPlaceholder')}
-        className="w-full pl-10 pr-4 py-2.5 bg-[#1E293B] border border-gray-700 rounded-lg text-offwhite placeholder-gray-500 focus:outline-none focus:border-lime/50 transition-colors"
+        className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-sm"
       />
     </div>
   )

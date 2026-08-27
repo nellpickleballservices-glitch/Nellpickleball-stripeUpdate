@@ -1,16 +1,10 @@
 /**
- * Full-bleed hero background with video on md+ screens and image on mobile.
+ * Full-bleed hero background — autoplay video on every screen size.
+ * `playsInline` + `muted` are required for autoplay on iOS Safari.
  */
 export function HeroVideo() {
   return (
     <div className="absolute inset-0 z-[1]" aria-hidden="true">
-      {/* Mobile: static image */}
-      <img
-        src="/images/siteImages/hero-mobile-img.jpeg"
-        alt="Pickleball players at NELL Pickleball Club in Bavaro, Dominican Republic"
-        className="absolute inset-0 w-full h-full object-cover md:hidden"
-      />
-      {/* Desktop: autoplay video */}
       <video
         autoPlay
         loop
@@ -18,7 +12,8 @@ export function HeroVideo() {
         playsInline
         disablePictureInPicture
         controlsList="nodownload noplaybackrate"
-        className="absolute inset-0 w-full h-full object-cover hidden md:block"
+        poster="/images/siteImages/hero-mobile-img.jpeg"
+        className="absolute inset-0 w-full h-full object-cover object-right sm:object-center"
       >
         <source src="/videos/Hero-video2.mp4" type="video/mp4" />
       </video>
@@ -30,10 +25,10 @@ export function HeroVideo() {
           background: `
             linear-gradient(
               to top,
-              rgba(15, 23, 42, 0.92) 0%,
-              rgba(15, 23, 42, 0.55) 35%,
-              rgba(15, 23, 42, 0.15) 60%,
-              rgba(15, 23, 42, 0.10) 100%
+              rgba(28, 48, 93, 0.92) 0%,
+              rgba(28, 48, 93, 0.55) 35%,
+              rgba(28, 48, 93, 0.15) 60%,
+              rgba(28, 48, 93, 0.10) 100%
             )
           `,
         }}
@@ -45,8 +40,8 @@ export function HeroVideo() {
           background: `
             linear-gradient(
               to right,
-              rgba(15, 23, 42, 0.50) 0%,
-              rgba(15, 23, 42, 0.20) 30%,
+              rgba(28, 48, 93, 0.50) 0%,
+              rgba(28, 48, 93, 0.20) 30%,
               transparent 60%
             )
           `,

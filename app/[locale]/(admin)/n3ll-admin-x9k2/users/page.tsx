@@ -56,16 +56,16 @@ export default function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-offwhite mb-6">{t('users')}</h1>
+      <h1 className="text-2xl font-bold text-midnight mb-6">{t('users')}</h1>
 
       <div className="mb-6">
         <UserSearchBar onSearch={handleSearch} />
       </div>
 
-      <div className="bg-[#1E293B] rounded-lg border border-gray-700">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin h-6 w-6 border-2 border-lime border-t-transparent rounded-full" />
+            <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full" />
           </div>
         ) : (
           <UserTable

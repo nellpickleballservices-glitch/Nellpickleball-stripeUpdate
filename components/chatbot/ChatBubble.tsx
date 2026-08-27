@@ -18,7 +18,11 @@ export function ChatBubble({ onClick, isOpen }: ChatBubbleProps) {
     <button
       onClick={onClick}
       aria-label={isOpen ? 'Close chat' : 'Open chat with Nell'}
-      className={`fixed right-6 bottom-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300 ${
+      style={{
+        right: 'max(1.5rem, env(safe-area-inset-right))',
+        bottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+      }}
+      className={`fixed z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-300 ${
         isOpen
           ? 'hidden lg:flex bg-gray-700 hover:bg-gray-800'
           : 'bg-[#A3FF12] hover:scale-110 hover:bg-[#7ED957]'

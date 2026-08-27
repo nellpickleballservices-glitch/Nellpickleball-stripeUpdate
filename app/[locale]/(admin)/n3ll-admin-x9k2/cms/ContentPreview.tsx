@@ -20,7 +20,7 @@ export function ContentPreview({ html }: ContentPreviewProps) {
 
   return (
     <div>
-      <p className="text-xs text-white/90 mb-2 font-medium">{t('preview')}</p>
+      <p className="text-xs text-gray-600 mb-2 font-medium">{t('preview')}</p>
       <div
         className="bg-offwhite text-charcoal p-6 rounded-lg prose prose-sm max-w-none"
         dangerouslySetInnerHTML={{ __html: sanitized }}

@@ -33,7 +33,7 @@ export async function getContentBlocksAction(): Promise<GroupedContentBlocks> {
 
   for (const block of blocks) {
     if (block.block_key.startsWith('home_')) grouped.home.push(block)
-    else if (block.block_key === 'about_values') continue // values managed by ValueTimeline component
+    else if (block.block_key === 'about_values') continue // values rendered by ValuesBanner from translation keys, not CMS
     else if (block.block_key.startsWith('about_')) grouped.about.push(block)
     else if (block.block_key.startsWith('learn_')) grouped.learn.push(block)
     else if (block.block_key.startsWith('faq_')) grouped.faq.push(block)

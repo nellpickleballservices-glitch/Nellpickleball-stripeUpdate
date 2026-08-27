@@ -30,10 +30,10 @@ export default function CompleteProfileForm() {
           autoComplete="tel"
           required
           placeholder="+1 (829) 555-0000"
-          className="bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
+          className="bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors"
         />
         {state.errors?.phone && (
-          <p className="text-red-400 text-sm mt-1">{state.errors.phone}</p>
+          <p className="text-red-300 text-sm mt-1">{state.errors.phone}</p>
         )}
       </div>
 
@@ -44,11 +44,11 @@ export default function CompleteProfileForm() {
         defaultValue="DO"
       />
       {state.errors?.country && (
-        <p className="text-red-400 text-sm mt-1">{state.errors.country}</p>
+        <p className="text-red-300 text-sm mt-1">{state.errors.country}</p>
       )}
 
       {state.message && (
-        <p className="text-red-400 text-sm text-center">{state.message}</p>
+        <p className="text-red-300 text-sm text-center">{state.message}</p>
       )}
 
       <button

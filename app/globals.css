@@ -11,11 +11,12 @@
   --color-electric: #7ED957;
   --color-sunset: #FF6B2C;
 
-  /* Background System */
-  --color-midnight: #0F172A;
-  --color-charcoal: #1E293B;
-  --color-slate: #334155;
-  --color-navy: #020617;
+  /* Background System — all in the same blue family so cards/borders sit
+     above the midnight base instead of clashing with cool grays. */
+  --color-midnight: #1C305D;   /* base surface */
+  --color-charcoal: #2A4378;   /* one step lighter — cards on midnight */
+  --color-slate: #3F5995;      /* hover / dividers */
+  --color-navy: #0E1E3D;       /* deeper than midnight for the rare deep accent */
 
   /* Text Colors */
   --color-offwhite: #FFFFFF;
@@ -25,6 +26,18 @@
   /* Accent */
   --color-turquoise: #38BDF8;
   --color-danger: #EF4444;
+
+  /* UI chrome — public navbar + admin sidebar share these. */
+  --color-cream: #f5f3ed;          /* public navbar background, admin sidebar logo panel */
+  --color-nav-link: #162649;       /* navbar links + language switcher (default) */
+  --color-nav-link-hover: #2A4789; /* navbar links + language switcher (hover / active) */
+  --color-divider: #252525;        /* 1.5px hairline below navbar + right of sidebar */
+}
+
+/* Prevent rogue full-bleed elements (marquee, hero video, etc.) from causing
+   sideways scroll on phones. Body-only so position: sticky still works on html. */
+body {
+  overflow-x: hidden;
 }
 
 /* ---- Effect Animations ---- */
@@ -86,7 +99,7 @@
   color: var(--color-turquoise);
 }
 
-/* Make native date/time input icons visible on dark backgrounds */
+/* Make native date/time input icons visible on dark backgrounds (public site) */
 input[type="date"],
 input[type="time"],
 input[type="datetime-local"] {
@@ -97,4 +110,88 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
+}
+
+/* Admin uses a light theme — revert the inversion so the calendar icon is dark on white */
+.admin-scope input[type="date"],
+.admin-scope input[type="time"],
+.admin-scope input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+.admin-scope input[type="date"]::-webkit-calendar-picker-indicator,
+.admin-scope input[type="time"]::-webkit-calendar-picker-indicator,
+.admin-scope input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}
+
+/* Hide horizontal scrollbar on banner-style overflow rows */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Continuous right-to-left marquee — used on mobile values banner */
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee-left 25s linear infinite;
+}
+/* Tighter pace on phones so a full revolution finishes inside ~18s instead of
+   feeling like an endless ticker. */
+@media (max-width: 480px) {
+  .animate-marquee {
+    animation-duration: 18s;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+/* ─── Mobile UX ───────────────────────────────────────────────────────── */
+
+/* Kill the 300ms double-tap zoom delay on interactive elements. */
+a, button, [role="button"], summary,
+input[type="submit"], input[type="button"], input[type="reset"] {
+  touch-action: manipulation;
+}
+
+/* Make interactive elements show a pointer cursor on hover. Tailwind v4's
+   preflight doesn't include this by default on buttons, and some Link
+   wrappers can suppress the native anchor cursor. */
+a, button:not(:disabled), [role="button"]:not([aria-disabled="true"]),
+input[type="submit"]:not(:disabled), input[type="button"]:not(:disabled),
+input[type="reset"]:not(:disabled), label[for], summary {
+  cursor: pointer;
+}
+
+/* iOS Safari auto-zooms into form fields whose font-size is < 16px. Force a
+   minimum of 16px on phones to suppress the zoom while keeping the existing
+   sizing on tablets/desktops. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Honor the user's reduced-motion preference globally — collapse animations
+   and transitions to a near-instant duration so the page still updates but
+   doesn't ride heavy easing curves. Pairs with Framer Motion's own respect
+   for prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

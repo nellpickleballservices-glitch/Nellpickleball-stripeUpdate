@@ -76,3 +76,190 @@ export async function sendReminderEmail(
     console.error('Failed to send reminder email:', error)
   }
 }
+
+export interface ExpeditionInterestEmail {
+  expeditionTitle: string
+  name: string
+  email: string
+  phone: string | null
+  partySize: number | null
+  message: string | null
+}
+
+/**
+ * Notifies the operator that a new expedition interest was submitted.
+ * Target inbox comes from CLIENT_NOTIFICATION_EMAIL env var.
+ */
+export async function sendExpeditionInterestEmail(
+  payload: ExpeditionInterestEmail
+): Promise<void> {
+  const to = process.env.CLIENT_NOTIFICATION_EMAIL
+  if (!to) {
+    console.warn(
+      '[interest-email] CLIENT_NOTIFICATION_EMAIL not set — skipping email notification.'
+    )
+    return
+  }
+
+  try {
+    const lines = [
+      `A new lead has shown interest in: ${payload.expeditionTitle}`,
+      '',
+      `Name:        ${payload.name}`,
+      `Email:       ${payload.email}`,
+      payload.phone ? `Phone:       ${payload.phone}` : null,
+      payload.partySize ? `Party size:  ${payload.partySize}` : null,
+      '',
+      payload.message ? `Message:\n${payload.message}` : null,
+      '',
+      '— Sent automatically by the NELL Pickleball site.',
+    ].filter(Boolean) as string[]
+
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      replyTo: payload.email,
+      subject: `New expedition interest: ${payload.expeditionTitle}`,
+      text: lines.join('\n'),
+    })
+  } catch (error) {
+    console.error('Failed to send expedition interest email:', error)
+  }
+}
+
+export interface SessionSignupEmail {
+  sessionTitle: string
+  sessionDate: string
+  startTime: string
+  endTime: string
+  name: string
+  email: string
+  phone: string | null
+  paymentMethod: 'stripe' | 'cash'
+  amountCents: number
+  currency: string
+}
+
+function formatMoney(cents: number, currency: string): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+  }).format(cents / 100)
+}
+
+/**
+ * Sends the player their confirmation and the operator their heads-up, in one
+ * call. Both sends are individually guarded: a failure to notify the operator
+ * must never cost the player their confirmation, and neither can fail the
+ * booking that already succeeded.
+ */
+export async function sendSessionSignupEmails(payload: SessionSignupEmail): Promise<void> {
+  const when = `${payload.sessionDate} · ${payload.startTime.slice(0, 5)}–${payload.endTime.slice(0, 5)}`
+  const paid = payload.paymentMethod === 'stripe'
+  const amount = formatMoney(payload.amountCents, payload.currency)
+
+  // ── Player confirmation ──
+  try {
+    const lines = [
+      `Hi ${payload.name},`,
+      '',
+      `You're signed up for ${payload.sessionTitle}.`,
+      '',
+      `When:   ${when}`,
+      paid
+        ? `Paid:   ${amount} — payment received, you're all set.`
+        : `To pay: ${amount} in cash at the court. Please arrive a few minutes early.`,
+      '',
+      'Spots are limited, so let us know as soon as possible if your plans change.',
+      '',
+      'See you on the court!',
+      '— NELL Pickleball Club',
+    ]
+
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: payload.email,
+      subject: `You're signed up — ${payload.sessionTitle}`,
+      text: lines.join('\n'),
+    })
+  } catch (error) {
+    console.error('Failed to send session confirmation email:', error)
+  }
+
+  // ── Operator notification ──
+  const to = process.env.CLIENT_NOTIFICATION_EMAIL
+  if (!to) {
+    console.warn('[session-email] CLIENT_NOTIFICATION_EMAIL not set — skipping operator notification.')
+    return
+  }
+
+  try {
+    const lines = [
+      `New sign-up for: ${payload.sessionTitle}`,
+      '',
+      `When:     ${when}`,
+      `Name:     ${payload.name}`,
+      `Email:    ${payload.email}`,
+      payload.phone ? `Phone:    ${payload.phone}` : null,
+      `Payment:  ${paid ? `${amount} paid online` : `${amount} CASH — collect at the court`}`,
+      '',
+      '— Sent automatically by the NELL Pickleball site.',
+    ].filter(Boolean) as string[]
+
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      replyTo: payload.email,
+      subject: `${paid ? 'Paid' : 'Cash'} sign-up: ${payload.sessionTitle} (${payload.sessionDate})`,
+      text: lines.join('\n'),
+    })
+  } catch (error) {
+    console.error('Failed to send session operator email:', error)
+  }
+}
+
+export interface ContactMessageEmail {
+  firstName: string
+  lastName: string
+  email: string
+  question: string
+}
+
+/**
+ * Notifies the operator that a new contact-form message was submitted.
+ * Target inbox comes from CLIENT_NOTIFICATION_EMAIL env var.
+ */
+export async function sendContactMessageEmail(
+  payload: ContactMessageEmail
+): Promise<void> {
+  const to = process.env.CLIENT_NOTIFICATION_EMAIL
+  if (!to) {
+    console.warn(
+      '[contact-email] CLIENT_NOTIFICATION_EMAIL not set — skipping email notification.'
+    )
+    return
+  }
+
+  try {
+    const lines = [
+      'A new message was submitted through the contact form.',
+      '',
+      `Name:   ${payload.firstName} ${payload.lastName}`,
+      `Email:  ${payload.email}`,
+      '',
+      `Question:\n${payload.question}`,
+      '',
+      '— Sent automatically by the NELL Pickleball site.',
+    ]
+
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      replyTo: payload.email,
+      subject: `New contact message from ${payload.firstName} ${payload.lastName}`,
+      text: lines.join('\n'),
+    })
+  } catch (error) {
+    console.error('Failed to send contact message email:', error)
+  }
+}

@@ -32,7 +32,7 @@ export interface ContentBlock {
 export interface AdminStats {
   totalUsers: number
   activeMembers: number
-  todayReservations: number
+  todaySignups: number
   upcomingEvents: number
 }
 
@@ -51,6 +51,24 @@ export interface GalleryItem {
   grid_size: GalleryGridSize
   sort_order: number
   is_visible: boolean
+  created_at: string
+}
+
+export interface Expedition {
+  id: string
+  title_es: string
+  title_en: string
+  description_es: string | null
+  description_en: string | null
+  details_es: string | null
+  details_en: string | null
+  image_url: string
+  image_urls: string[]
+  start_date: string
+  end_date: string
+  expires_at: string | null
+  is_published: boolean
+  sort_order: number
   created_at: string
 }
 

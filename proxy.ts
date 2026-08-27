@@ -6,7 +6,6 @@ import {
   needsAuthCheck,
   isProtectedRoute,
   isAuthRedirectRoute,
-  isReservationRoute,
   isCompleteProfileRoute,
 } from '@/lib/middleware/route-helpers'
 import {
@@ -53,11 +52,12 @@ export default async function proxy(request: NextRequest) {
   // Never use the session-based getter — it does not revalidate tokens (security vulnerability).
   const { data: { user } } = await supabase.auth.getUser()
 
-  // AUTH REDIRECT ROUTES: Redirect logged-in users from /login, /signup to /member/dashboard
+  // AUTH REDIRECT ROUTES: Redirect logged-in users away from /login, /signup.
+  // There is no member dashboard — booking lives on the public /sessions pages.
   if (isAuthRedirectRoute(pathname)) {
     if (user) {
       const url = request.nextUrl.clone()
-      url.pathname = '/member/dashboard'
+      url.pathname = '/'
       return NextResponse.redirect(url)
     }
     // Not logged in — show login/signup page with i18n + Supabase cookies
@@ -100,12 +100,12 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  // LOCKED DECISION (CONTEXT.md): Reservation routes are open to ALL authenticated users.
-  // Non-members pay per session. Skip membership gate for /reservations and /checkout-session.
-
   // MEMBER ROUTES: Check membership status (with cookie cache)
   // LOCKED DECISION (CONTEXT.md): Authenticated but unsubscribed users accessing /member/* go to /pricing.
-  if (user && pathname.includes('/member/') && !isReservationRoute(pathname)) {
+  //
+  // Play-session booking is deliberately NOT gated here — it lives on the public
+  // /sessions pages and is open to everyone, members and non-members alike.
+  if (user && pathname.includes('/member/')) {
     // First: check signed cookie cache for membership status
     const cached = await getMembershipFromCookie(request)
 

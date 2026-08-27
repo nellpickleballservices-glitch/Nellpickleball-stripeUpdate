@@ -1,7 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Bebas_Neue, Poppins, Bungee } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Navbar } from '@/components/Navbar'
 import { MotionProvider } from '@/components/motion/MotionProvider'
 import '../globals.css'
@@ -26,6 +28,7 @@ const bungee = Bungee({
   variable: '--font-bungee',
   display: 'swap',
 })
+
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nellpickleball.com'
 
@@ -73,10 +76,16 @@ export const metadata: Metadata = {
     },
   },
   manifest: '/manifest.json',
-  other: {
-    'theme-color': '#A3E635',
-  },
   verification: {},
+}
+
+// Drives the mobile-browser chrome color, makes safe-area-inset env() vars
+// available (viewportFit: 'cover'), and locks zoom + width.
+export const viewport: Viewport = {
+  themeColor: '#1C305D',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default async function RootLayout({
@@ -138,6 +147,8 @@ export default async function RootLayout({
             {children}
           </MotionProvider>
         </NextIntlClientProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

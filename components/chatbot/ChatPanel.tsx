@@ -229,15 +229,22 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+  // Mobile: full-screen panel sized to the dynamic viewport (handles the iOS
+  // address-bar show/hide), padded for the notch + home indicator, and locked
+  // against rubber-band scrolling the page beneath.
+  //
+  // Desktop: ideal 480px tall, but capped to (viewport - 7rem) so the top edge
+  // never floats above the viewport on shorter laptop screens. The bottom
+  // anchor stays close to the chat bubble.
   const panelClasses = isMobile
-    ? 'fixed inset-0 z-50 flex flex-col bg-white pb-[env(safe-area-inset-bottom)]'
-    : 'fixed right-6 bottom-24 z-50 flex h-[520px] w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl'
+    ? 'fixed inset-x-0 top-0 z-50 flex h-[100dvh] flex-col bg-white overscroll-contain pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
+    : 'fixed right-6 bottom-20 z-50 flex h-[min(480px,calc(100dvh-7rem))] w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl'
 
   return (
     <div className={panelClasses}>
-      {/* Header */}
-      <div className="flex items-center gap-3 bg-[#0F172A] px-4 py-3">
-        <img src="/images/icons/nellyBot1.png" alt="Nell" className="h-8 w-8 rounded-full object-cover" />
+      {/* Header — denser on phones so it doesn't eat into the message area. */}
+      <div className="flex shrink-0 items-center gap-3 bg-[#1C305D] px-4 py-2 sm:py-3">
+        <img src="/images/icons/nellyBot1.png" alt="Nell" className="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover" />
         <span className="flex-1 text-sm font-semibold text-white">Nell</span>
         <button
           onClick={onClose}
@@ -260,10 +267,11 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
         </button>
       </div>
 
-      {/* Messages */}
+      {/* Messages — min-h-0 lets the flex item shrink properly inside the
+          column; tighter padding/spacing on phones so more bubbles fit. */}
       <div
         ref={scrollRef}
-        className="flex-1 space-y-3 overflow-y-auto bg-gray-50 p-4"
+        className="flex-1 min-h-0 space-y-2 sm:space-y-3 overflow-y-auto overscroll-contain bg-gray-50 px-3 py-3 sm:p-4"
       >
         {messages.map((msg) => (
           <div
@@ -274,9 +282,9 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
               <img src="/images/icons/nellyBot1.png" alt="Nell" className="mr-2 mt-1 h-6 w-6 flex-shrink-0 rounded-full object-cover" />
             )}
             <div
-              className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${
+              className={`max-w-[80%] sm:max-w-[75%] rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 text-sm leading-snug sm:leading-relaxed ${
                 msg.role === 'user'
-                  ? 'bg-[#A3FF12] text-[#0F172A]'
+                  ? 'bg-[#A3FF12] text-[#1C305D]'
                   : 'bg-gray-200 text-gray-900'
               }`}
             >
@@ -292,7 +300,7 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
               <button
                 key={chip}
                 onClick={() => sendMessage(chip)}
-                className="rounded-full border border-[#A3FF12]/50 bg-white px-3 py-1.5 text-xs font-medium text-[#0F172A] transition-colors hover:border-[#38BDF8] hover:bg-[#38BDF8]/10"
+                className="rounded-full border border-[#A3FF12]/50 bg-white px-3 py-1.5 text-xs font-medium text-[#1C305D] transition-colors hover:border-[#38BDF8] hover:bg-[#38BDF8]/10"
               >
                 {chip}
               </button>
@@ -303,7 +311,7 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
         {/* Typing indicator */}
         {showTyping && (
           <div className="flex justify-start">
-            <div className="mr-2 mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#0F172A]">
+            <div className="mr-2 mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#1C305D]">
               <span className="text-[10px] font-bold text-[#A3FF12]">N</span>
             </div>
             <div className="flex items-center gap-1 rounded-2xl bg-gray-200 px-4 py-3">
@@ -315,8 +323,8 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
         )}
       </div>
 
-      {/* Input */}
-      <div className="border-t border-gray-200 bg-white px-3 py-2">
+      {/* Input — shrink-0 so it always stays visible above the keyboard. */}
+      <div className="shrink-0 border-t border-gray-200 bg-white px-3 py-2">
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -332,7 +340,7 @@ export function ChatPanel({ locale, onClose }: ChatPanelProps) {
             onClick={() => sendMessage(input)}
             disabled={isStreaming || !input.trim()}
             aria-label="Send message"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#A3FF12] text-[#0F172A] transition-all hover:scale-105 disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#A3FF12] text-[#1C305D] transition-all hover:scale-105 disabled:opacity-40"
           >
             <svg
               width="18"

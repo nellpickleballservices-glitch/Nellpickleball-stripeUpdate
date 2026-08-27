@@ -1,0 +1,131 @@
+================================================================================
+NELL Pickleball — Change Log
+================================================================================
+
+2026-06-08
+--------------------------------------------------------------------------------
+
+HERO SECTION
+- Removed the "Bavaro, Dominican Republic" location badge at the top of the
+  hero (app/[locale]/page.tsx). The i18n key `heroLocationBadge` is still
+  defined in messages/{en,es}.json — safe to remove later.
+- Restructured the hero layout for mobile so the main content sits near the
+  bottom (flex-col + justify-end) with the locations card directly below it,
+  closing the previously large vertical gap. Desktop layout unchanged —
+  main content absolute bottom-left, locations card absolute right at
+  lg:top-[4vh].
+- Mobile font sizes bumped:
+  • headline clamp floor 2.5rem → 3rem
+  • club name clamp floor 1rem → 1.25rem
+  • "No membership" line text-2xl → text-3xl
+  • locations title text-sm → text-base
+  • location items text-base → text-lg
+- HeroVideo: added `object-right sm:object-center` so the players are
+  visible on phones (right-anchored crop), centered on tablet+.
+
+LOCATIONS FEATURE (new)
+- New migration: supabase/migrations/0022_hero_locations.sql
+  Table `hero_locations` (id, name, sort_order, created_at) with public-read
+  RLS + service-role full access. Separate from the operational `locations`
+  table (which is wired to courts/reservations) — marketing-only.
+- New server actions: app/actions/admin/hero-locations.ts
+  getHeroLocationsAction / createHeroLocationAction / deleteHeroLocationAction
+  exported via app/actions/admin.ts barrel.
+- New public query: lib/queries/hero-locations.ts
+- Homepage fetches locations server-side and renders them in a list on the
+  hero with a lime location-pin icon per item. Card has no background, list
+  expands horizontally so names fit on one line (lg:whitespace-nowrap).
+- CMS page now has a top-level toggle: "Content Blocks" vs "Hero Locations"
+  (app/[locale]/(admin)/n3ll-admin-x9k2/cms/page.tsx). Locations panel has
+  an add form and delete-per-row list.
+- i18n keys added: Home.heroLocationsTitle, Admin.heroLocations*,
+  Admin.heroLocationName, etc.
+
+CARIBBEAN EXPERIENCE CARDS (ExpeditionsSection)
+- Border radius: rounded-2xl → rounded-[12px].
+- Grid: max-w-7xl → max-w-6xl, gap-8 → gap-6.
+- Image aspect: 16/9 → 2/1 (tried "more rectangular"), then settled on 4/3
+  per follow-up — taller, less wide overall.
+- Body padding p-5 → p-4. All inner text sizes reduced (title text-lg →
+  text-base, dates text-sm → text-xs, etc.), description line-clamp-3 → 2,
+  Learn More link/arrow smaller.
+
+LANGUAGE SWITCHER
+- Replaced the globe-icon + "ES"/"EN" text toggle with an animated switch:
+  pill track + circular thumb that slides between left (English) and right
+  (Spanish) positions over 300 ms ease-out.
+- Track color recolors with the active flag's dominant tone (UK navy
+  #012169 / Spain red #AA151B).
+- Thumb is covered with the actual flag — Union Jack SVG and Spain
+  red/yellow/red SVG saved in public/images/flags/{gb,es}.svg and rendered
+  via Next.js <Image fill> with object-cover inside a circular thumb.
+- 3D look: track has border + outer drop shadow + inset highlight; thumb
+  has ring + drop shadow + inset highlight to read as a raised dome.
+- Persists locale_pref to profiles row if user is logged in.
+
+GEO-BASED LOCALE AUTO-DETECT (middleware.ts)
+- On first visit (no NEXT_LOCALE cookie, not already on /en, not an API/
+  auth route), reads visitor country from x-vercel-ip-country /
+  cf-ipcountry and redirects to /en/... if it's in EN_COUNTRIES (US, GB,
+  CA, AU, NZ, IE, JM, TT, BS, BB, GY, BZ). Falls back to Accept-Language
+  in local dev. Spanish is the default for everyone else.
+
+GALLERY — VIDEO UPLOADS + COMPRESSION
+- uploadGalleryFileAction (app/actions/admin/gallery.ts) now accepts video
+  MIME types (video/mp4, video/webm, video/quicktime) with a 100 MB cap
+  (vs 10 MB for images). ensureBucket calls updateBucket on existing
+  buckets so the new allowlist + size cap take effect without recreation.
+- GalleryItemForm now shows the upload button for both image and video.
+  Video URL preview uses a <video controls> element.
+- New module: lib/video-compress.ts — uses @ffmpeg/ffmpeg + @ffmpeg/util
+  for in-browser H.264/AAC re-encoding (CRF 28, fast preset, scale to
+  max 1280 wide, +faststart for streaming start). ffmpeg core is fetched
+  from unpkg.com on first call and cached for the session.
+- Form dynamic-imports video-compress so the ~30 MB WASM only loads when
+  an admin actually picks a video. Progress UI cycles through "Loading
+  compressor", "Compressing video {n}%", and "Uploading".
+- next.config.ts CSP updated for ffmpeg.wasm:
+  • script-src adds `blob:`
+  • new directive: worker-src 'self' blob:
+  • connect-src adds blob: + https://unpkg.com
+  • media-src adds blob:
+- Then loosened further so pasted external URLs render in the preview:
+  • img-src now allows `https:` (any HTTPS origin)
+  • media-src now allows `https:` (any HTTPS origin)
+- i18n: galleryLoadingCompressor, galleryCompressing added in en + es.
+
+DEPENDENCIES ADDED
+- @ffmpeg/ffmpeg ^0.12.15
+- @ffmpeg/util ^0.12.2
+
+FILES TOUCHED THIS SESSION
+- app/[locale]/page.tsx
+- app/[locale]/(admin)/n3ll-admin-x9k2/cms/page.tsx
+- app/[locale]/(admin)/n3ll-admin-x9k2/gallery/GalleryItemForm.tsx
+- app/actions/admin.ts
+- app/actions/admin/gallery.ts
+- app/actions/admin/hero-locations.ts (new)
+- components/effects/HeroVideo.tsx
+- components/LanguageSwitcher.tsx
+- components/public/ExpeditionsSection.tsx
+- lib/queries/hero-locations.ts (new)
+- lib/video-compress.ts (new)
+- messages/en.json
+- messages/es.json
+- middleware.ts
+- next.config.ts
+- public/images/flags/gb.svg (new)
+- public/images/flags/es.svg (new)
+- supabase/migrations/0022_hero_locations.sql (new)
+
+OPEN FOLLOW-UPS (not done yet)
+- Apply the new Supabase migration (`supabase db push` or run the SQL
+  manually) before testing the hero-locations CMS in production.
+- Test ffmpeg.wasm compression in production once deployed (works in dev
+  with the updated CSP).
+- Consider migrating gallery storage to S3/Firebase once volume grows —
+  upload action is the only piece that needs to swap.
+- The `heroLocationBadge` i18n keys (en + es) are still in messages/ but
+  no longer rendered; remove if you're sure you won't bring the badge back.
+
+================================================================================

@@ -14,7 +14,7 @@ interface UserTableProps {
 function StatusBadge({ user, t }: { user: UserWithDetails; t: ReturnType<typeof useTranslations> }) {
   if (user.is_banned) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-900/50 text-red-300">
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
         {t('userBanned')}
       </span>
     )
@@ -22,16 +22,16 @@ function StatusBadge({ user, t }: { user: UserWithDetails; t: ReturnType<typeof 
 
   if (!user.membership_status) {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-white">
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
         {t('noMembership')}
       </span>
     )
   }
 
   const statusStyles: Record<string, string> = {
-    active: 'bg-green-900/50 text-green-300',
-    past_due: 'bg-yellow-900/50 text-yellow-300',
-    cancelled: 'bg-red-900/50 text-red-300',
+    active: 'bg-green-100 text-green-700',
+    past_due: 'bg-yellow-100 text-yellow-700',
+    cancelled: 'bg-red-100 text-red-700',
   }
 
   const statusLabels: Record<string, string> = {
@@ -40,7 +40,7 @@ function StatusBadge({ user, t }: { user: UserWithDetails; t: ReturnType<typeof 
     cancelled: t('membershipCancelled'),
   }
 
-  const style = statusStyles[user.membership_status] ?? 'bg-gray-700 text-white'
+  const style = statusStyles[user.membership_status] ?? 'bg-gray-100 text-gray-700'
   const label = statusLabels[user.membership_status] ?? user.membership_status
 
   return (
@@ -58,21 +58,21 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
     <div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-700">
-              <th className="text-left text-xs font-medium text-white/90 uppercase tracking-wider py-3 px-4">
+          <thead className="bg-gray-50">
+            <tr className="border-b border-gray-200">
+              <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
                 {t('userName')}
               </th>
-              <th className="text-left text-xs font-medium text-white/90 uppercase tracking-wider py-3 px-4">
+              <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
                 {t('userEmail')}
               </th>
-              <th className="text-left text-xs font-medium text-white/90 uppercase tracking-wider py-3 px-4">
+              <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
                 {t('userPlan')}
               </th>
-              <th className="text-left text-xs font-medium text-white/90 uppercase tracking-wider py-3 px-4">
+              <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
                 {t('userStatus')}
               </th>
-              <th className="text-left text-xs font-medium text-white/90 uppercase tracking-wider py-3 px-4">
+              <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
                 {t('joinedDate')}
               </th>
             </tr>
@@ -80,7 +80,7 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center text-white/90 py-8">
+                <td colSpan={5} className="text-center text-gray-600 py-8">
                   {t('noResults')}
                 </td>
               </tr>
@@ -89,21 +89,21 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
                 <tr
                   key={user.id}
                   onClick={() => onSelectUser(user.id)}
-                  className="border-b border-gray-700/50 hover:bg-white/5 cursor-pointer transition-colors"
+                  className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors"
                 >
-                  <td className="py-3 px-4 text-offwhite text-sm">
+                  <td className="py-3 px-4 text-midnight font-medium text-sm">
                     {user.first_name} {user.last_name}
                   </td>
-                  <td className="py-3 px-4 text-white text-sm">
+                  <td className="py-3 px-4 text-gray-700 text-sm">
                     {user.email}
                   </td>
-                  <td className="py-3 px-4 text-white text-sm capitalize">
+                  <td className="py-3 px-4 text-gray-700 text-sm capitalize">
                     {user.membership_plan ?? '-'}
                   </td>
                   <td className="py-3 px-4">
                     <StatusBadge user={user} t={t} />
                   </td>
-                  <td className="py-3 px-4 text-white/90 text-sm">
+                  <td className="py-3 px-4 text-gray-600 text-sm">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                 </tr>
@@ -115,21 +115,21 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-700">
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 px-4 pb-4">
           <button
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            className="px-3 py-1.5 text-sm text-white hover:text-offwhite disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-sm text-gray-700 hover:text-midnight disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             {t('previousPage')}
           </button>
-          <span className="text-sm text-white/90">
+          <span className="text-sm text-gray-600">
             {t('pageOf', { current: page, total: totalPages })}
           </span>
           <button
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
-            className="px-3 py-1.5 text-sm text-white hover:text-offwhite disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 text-sm text-gray-700 hover:text-midnight disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             {t('nextPage')}
           </button>

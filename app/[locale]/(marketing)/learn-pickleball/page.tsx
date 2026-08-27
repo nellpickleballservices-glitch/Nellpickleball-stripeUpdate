@@ -1,11 +1,8 @@
 import { getLocale, getTranslations } from 'next-intl/server'
-import { createClient } from '@/lib/supabase/server'
 import { ScrollReveal } from '@/components/motion/ScrollReveal'
 import { HeroEntrance } from '@/components/motion/HeroEntrance'
 import { TableOfContents } from '@/components/public/TableOfContents'
 import { CourtDiagram } from '@/components/public/CourtDiagram'
-import { GlowButton } from '@/components/effects/GlowButton'
-import { FloatingParticles } from '@/components/effects/FloatingParticles'
 import { SubpageHeroAccents } from '@/components/effects/SubpageHeroAccents'
 import type { Metadata } from 'next'
 
@@ -58,8 +55,6 @@ const content = {
       { id: 'etiquette', label: 'Court Etiquette' },
       { id: 'faq', label: 'FAQ' },
     ],
-    cta: 'Ready to play? Join NELL Pickleball Club today.',
-    ctaButton: 'View Plans',
   },
   es: {
     heroTitle: 'Aprende Pickleball',
@@ -77,8 +72,6 @@ const content = {
       { id: 'etiquette', label: 'Etiqueta en la Cancha' },
       { id: 'faq', label: 'Preguntas Frecuentes' },
     ],
-    cta: '¿Listo para jugar? Únete a NELL Pickleball Club hoy.',
-    ctaButton: 'Ver Planes',
   },
 }
 
@@ -138,21 +131,11 @@ export default async function LearnPickleballPage() {
   const t = locale === 'en' ? content.en : content.es
   const isEn = locale === 'en'
 
-  let isLoggedIn = false
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    isLoggedIn = !!user
-  } catch {
-    // render as logged-out
-  }
-
   return (
     <main className="min-h-screen bg-midnight">
       {/* ━━━ Hero ━━━ */}
       <section className="relative flex flex-col items-center justify-center py-32 px-6 text-center overflow-hidden">
         <SubpageHeroAccents />
-        <FloatingParticles count={12} />
 
         <HeroEntrance className="relative z-10 flex flex-col items-center">
           <h1 className="font-bebas-neue text-[clamp(3rem,10vw,7rem)] leading-none tracking-widest gradient-text mb-4 inline-block">
@@ -1024,27 +1007,6 @@ export default async function LearnPickleballPage() {
               </ScrollReveal>
             </div>
 
-            {/* ─── Bottom CTA — only for non-logged-in users ─── */}
-            {!isLoggedIn && (
-              <ScrollReveal>
-                <div className="bg-gradient-to-br from-charcoal to-midnight border border-charcoal rounded-2xl p-8 sm:p-12 text-center">
-                  <h2 className="font-bebas-neue text-3xl sm:text-4xl gradient-text inline-block mb-4">
-                    {isEn ? 'Ready to Hit the Court?' : '¿Listo para la Cancha?'}
-                  </h2>
-                  <p className="text-white text-base mb-6 max-w-md mx-auto">
-                    {t.cta}
-                  </p>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <GlowButton href="/signup" variant="lime">
-                      {t.ctaButton}
-                    </GlowButton>
-                    <GlowButton href="/contact" variant="lime">
-                      {isEn ? 'Contact Us' : 'Contáctanos'}
-                    </GlowButton>
-                  </div>
-                </div>
-              </ScrollReveal>
-            )}
           </div>
         </div>
       </section>

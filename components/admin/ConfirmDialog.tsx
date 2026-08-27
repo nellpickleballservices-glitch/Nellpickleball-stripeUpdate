@@ -45,16 +45,16 @@ export function ConfirmDialog({
       onClick={onClose}
     >
       <div
-        className="bg-[#1E293B] rounded-lg p-6 max-w-md w-full"
+        className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-lg font-semibold text-offwhite">{title}</h3>
-        <p className="text-white/90 mt-2 text-sm">{message}</p>
+        <h3 className="text-lg font-semibold text-midnight">{title}</h3>
+        <p className="text-gray-600 mt-2 text-sm">{message}</p>
 
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-white hover:text-offwhite transition-colors"
+            className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
             disabled={loading}
           >
             Cancel
@@ -65,7 +65,7 @@ export function ConfirmDialog({
             className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${
               destructive
                 ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-lime hover:bg-lime/90 text-midnight'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
             }`}
           >
             {loading ? (

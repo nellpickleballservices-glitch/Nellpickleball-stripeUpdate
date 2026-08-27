@@ -20,30 +20,21 @@ export async function getAdminStatsAction(): Promise<AdminStats> {
     day: '2-digit',
   })
   const todayStr = formatter.format(now) // YYYY-MM-DD
-  const todayStart = `${todayStr}T00:00:00-04:00`
-  const tomorrowDate = new Date(now)
-  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
-  const tomorrowStr = formatter.format(tomorrowDate)
-  const tomorrowStart = `${tomorrowStr}T00:00:00-04:00`
 
   // Total users (count profiles as proxy for registered users)
   const { count: totalUsers } = await supabaseAdmin
     .from('profiles')
     .select('id', { count: 'exact', head: true })
 
-  // Active members
-  const { count: activeMembers } = await supabaseAdmin
-    .from('memberships')
+  // Today's play-session sign-ups. Mirrors session_taken_count(): a spot is
+  // occupied while pending or paid, and a pending Stripe hold that has lapsed
+  // no longer counts.
+  const { count: todaySignups } = await supabaseAdmin
+    .from('session_signups')
     .select('id', { count: 'exact', head: true })
-    .eq('status', 'active')
-
-  // Today's reservations (non-cancelled)
-  const { count: todayReservations } = await supabaseAdmin
-    .from('reservations')
-    .select('id', { count: 'exact', head: true })
-    .gte('starts_at', todayStart)
-    .lt('starts_at', tomorrowStart)
-    .neq('status', 'cancelled')
+    .eq('session_date', todayStr)
+    .in('payment_status', ['pending', 'paid'])
+    .or(`hold_expires_at.is.null,hold_expires_at.gt.${now.toISOString()}`)
 
   // Upcoming events
   const { count: upcomingEvents } = await supabaseAdmin
@@ -53,8 +44,8 @@ export async function getAdminStatsAction(): Promise<AdminStats> {
 
   return {
     totalUsers: totalUsers ?? 0,
-    activeMembers: activeMembers ?? 0,
-    todayReservations: todayReservations ?? 0,
+    activeMembers: 0,
+    todaySignups: todaySignups ?? 0,
     upcomingEvents: upcomingEvents ?? 0,
   }
 }

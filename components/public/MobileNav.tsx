@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { AnimatePresence, m } from 'motion/react'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
@@ -10,16 +10,14 @@ import type { User } from '@supabase/supabase-js'
 
 interface MobileNavProps {
   user: User | null
-  firstName: string | null
   isAdmin: boolean
 }
 
-export function MobileNav({ user, firstName, isAdmin }: MobileNavProps) {
+export function MobileNav({ user, isAdmin }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const [navBottom, setNavBottom] = useState(0)
   const t = useTranslations('Nav')
   const tBilling = useTranslations('Billing')
-  const tReservations = useTranslations('Reservations')
   const tAdmin = useTranslations('Admin')
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -71,7 +69,7 @@ export function MobileNav({ user, firstName, isAdmin }: MobileNavProps) {
   const close = () => setOpen(false)
 
   const publicLinks = [
-    { href: '/#packages', label: t('reservations') },
+    { href: '/#sessions', label: t('sessions') },
     { href: '/learn-pickleball', label: t('learn') },
     { href: '/gallery', label: t('gallery') },
     { href: '/contact', label: t('contact') },
@@ -88,15 +86,15 @@ export function MobileNav({ user, firstName, isAdmin }: MobileNavProps) {
         aria-expanded={open}
       >
         {open ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-offwhite">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--color-nav-link)]">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         ) : (
           <>
-            <span className="w-6 h-0.5 bg-offwhite rounded-full" />
-            <span className="w-6 h-0.5 bg-offwhite rounded-full" />
-            <span className="w-6 h-0.5 bg-offwhite rounded-full" />
+            <span className="w-6 h-0.5 bg-[var(--color-nav-link)] rounded-full" />
+            <span className="w-6 h-0.5 bg-[var(--color-nav-link)] rounded-full" />
+            <span className="w-6 h-0.5 bg-[var(--color-nav-link)] rounded-full" />
           </>
         )}
       </button>
@@ -138,15 +136,6 @@ export function MobileNav({ user, firstName, isAdmin }: MobileNavProps) {
                 </Link>
               ))}
 
-              {user && (
-                <Link
-                  href="/dashboard"
-                  onClick={close}
-                  className="font-bungee px-4 py-2.5 text-offwhite hover:text-lime hover:bg-slate/50 transition-colors text-sm"
-                >
-                  {firstName ?? t('dashboard')}
-                </Link>
-              )}
               {isAdmin && (
                 <Link
                   href="/n3ll-admin-x9k2"
@@ -169,7 +158,7 @@ export function MobileNav({ user, firstName, isAdmin }: MobileNavProps) {
                   <Link
                     href="/login"
                     onClick={close}
-                    className="text-center py-2 text-offwhite text-sm border border-offwhite/30 rounded-full hover:border-lime hover:text-lime transition-colors"
+                    className="text-center py-2 text-offwhite text-sm border border-offwhite/50 rounded-full hover:border-lime hover:text-lime transition-colors"
                   >
                     {t('login')}
                   </Link>

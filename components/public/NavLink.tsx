@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, usePathname } from '@/i18n/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode, MouseEvent } from 'react'
 
@@ -12,8 +11,7 @@ interface NavLinkProps {
 }
 
 export function NavLink({ href, children, className = '' }: NavLinkProps) {
-  const pathname = usePathname()
-  const pathWithoutLocale = pathname.replace(/^\/(en|es)/, '') || '/'
+  const pathWithoutLocale = usePathname()
 
   const [hashPart, setHashPart] = useState('')
   const hrefPath = href.split('#')[0] || '/'
@@ -67,8 +65,8 @@ export function NavLink({ href, children, className = '' }: NavLinkProps) {
       onClick={handleClick}
       className={`font-bungee text-sm transition-colors ${
         isActive
-          ? 'text-lime'
-          : 'text-offwhite hover:text-lime'
+          ? 'text-[var(--color-nav-link-hover)]'
+          : 'text-[var(--color-nav-link)] hover:text-[var(--color-nav-link-hover)]'
       } ${className}`}
     >
       {children}

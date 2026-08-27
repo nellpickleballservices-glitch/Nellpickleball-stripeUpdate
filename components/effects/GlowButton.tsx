@@ -8,6 +8,7 @@ interface GlowButtonProps {
   href: string
   children: ReactNode
   variant?: 'lime' | 'sunset'
+  size?: 'sm' | 'md'
   className?: string
 }
 
@@ -19,9 +20,11 @@ export function GlowButton({
   href,
   children,
   variant = 'lime',
+  size = 'md',
   className = '',
 }: GlowButtonProps) {
   const isLime = variant === 'lime'
+  const sizeCls = size === 'sm' ? 'py-2.5 px-7 text-sm' : 'py-4 px-12 text-lg'
 
   return (
     <m.div
@@ -44,9 +47,9 @@ export function GlowButton({
 
       <Link
         href={href}
-        className={`relative inline-block font-bold rounded-full py-4 px-12 text-lg tracking-wide transition-all duration-200 ${
+        className={`relative inline-block font-bold rounded-full whitespace-nowrap tracking-wide transition-all duration-200 ${sizeCls} ${
           isLime
-            ? 'bg-lime text-midnight hover:bg-electric'
+            ? 'bg-lime text-white hover:bg-electric'
             : 'bg-sunset text-offwhite hover:bg-orange-500'
         } ${className}`}
       >

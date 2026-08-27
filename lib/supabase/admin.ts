@@ -1,4 +1,5 @@
 // SERVER-ONLY: Never import from client components. SUPABASE_SERVICE_ROLE_KEY bypasses RLS.
+import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 
 // Admin client uses service_role — bypasses ALL RLS.

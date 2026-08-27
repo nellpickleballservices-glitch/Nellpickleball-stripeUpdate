@@ -30,7 +30,7 @@ export async function Footer() {
 
   const navLinks = [
     { href: '/', label: t('home') },
-    { href: '/#packages', label: t('reservations') },
+    { href: '/#sessions', label: t('reservations') },
     { href: '/learn-pickleball', label: t('learn') },
     { href: '/gallery', label: t('gallery') },
     { href: '/contact', label: t('contact') },
@@ -142,6 +142,48 @@ export async function Footer() {
         <div className="border-t border-charcoal mt-10 pt-6 text-center">
           <p className="text-xs text-white/80">
             {t('copyright', { year: new Date().getFullYear() })}
+          </p>
+          {/* Icon attribution required by Flaticon's free license. */}
+          <p className="text-xs text-white/70 mt-2">
+            <a
+              href="https://www.flaticon.com/free-icons/social-responsibility"
+              title="social-responsibility icons"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Social-responsibility icons created by Freepik - Flaticon
+            </a>
+            <span className="mx-2 opacity-50">·</span>
+            <a
+              href="https://www.flaticon.com/free-icons/accessibility"
+              title="accessibility icons"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Accessibility icons created by icon_small - Flaticon
+            </a>
+            <span className="mx-2 opacity-50">·</span>
+            <a
+              href="https://www.flaticon.com/free-icons/tourist"
+              title="tourist icons"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Tourist icons created by Freepik - Flaticon
+            </a>
+            <span className="mx-2 opacity-50">·</span>
+            <a
+              href="https://www.flaticon.com/free-icons/church"
+              title="church icons"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors"
+            >
+              Church icons created by Freepik - Flaticon
+            </a>
           </p>
         </div>
       </div>

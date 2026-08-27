@@ -3,7 +3,6 @@ import {
   isProtectedRoute,
   isAuthRedirectRoute,
   needsAuthCheck,
-  isReservationRoute,
 } from '@/lib/middleware/route-helpers'
 
 describe('isProtectedRoute', () => {
@@ -11,12 +10,12 @@ describe('isProtectedRoute', () => {
     expect(isProtectedRoute('/member/dashboard')).toBe(true)
   })
 
-  it('returns true for /admin/users', () => {
-    expect(isProtectedRoute('/admin/users')).toBe(true)
+  it('returns true for /n3ll-admin-x9k2/users (obscured admin URL)', () => {
+    expect(isProtectedRoute('/n3ll-admin-x9k2/users')).toBe(true)
   })
 
-  it('returns true for /dashboard', () => {
-    expect(isProtectedRoute('/dashboard')).toBe(true)
+  it('returns false for /dashboard (no member dashboard route)', () => {
+    expect(isProtectedRoute('/dashboard')).toBe(false)
   })
 
   it('returns true for locale-prefixed /en/member/dashboard', () => {
@@ -60,9 +59,9 @@ describe('isAuthRedirectRoute', () => {
 
 describe('needsAuthCheck', () => {
   it('returns true for protected routes', () => {
+    // PROTECTED_PREFIXES = ['/member/', '/n3ll-admin-x9k2/']
     expect(needsAuthCheck('/member/dashboard')).toBe(true)
-    expect(needsAuthCheck('/admin/users')).toBe(true)
-    expect(needsAuthCheck('/dashboard')).toBe(true)
+    expect(needsAuthCheck('/n3ll-admin-x9k2/users')).toBe(true)
   })
 
   it('returns true for auth redirect routes', () => {
@@ -80,16 +79,3 @@ describe('needsAuthCheck', () => {
   })
 })
 
-describe('isReservationRoute', () => {
-  it('returns true for /member/reservations', () => {
-    expect(isReservationRoute('/member/reservations')).toBe(true)
-  })
-
-  it('returns true for /member/checkout-session', () => {
-    expect(isReservationRoute('/member/checkout-session')).toBe(true)
-  })
-
-  it('returns false for /member/dashboard', () => {
-    expect(isReservationRoute('/member/dashboard')).toBe(false)
-  })
-})

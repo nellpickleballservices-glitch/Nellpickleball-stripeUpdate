@@ -66,22 +66,22 @@ export function ChatWidget({ locale }: ChatWidgetProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className="fixed right-24 bottom-8 z-50 max-w-[200px] rounded-lg bg-[#0F172A] px-3 py-2 text-xs text-white shadow-lg"
+            className="fixed right-24 bottom-8 z-50 max-w-[200px] rounded-lg bg-[#1C305D] px-3 py-2 text-xs text-white shadow-lg"
           >
             {tooltipText}
-            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 border-y-4 border-l-6 border-y-transparent border-l-[#0F172A]" />
+            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 border-y-4 border-l-6 border-y-transparent border-l-[#1C305D]" />
           </m.div>
         )}
       </AnimatePresence>
 
-      {/* Chat Panel */}
+      {/* Chat Panel — simple opacity fade, no slide. */}
       <AnimatePresence>
         {isOpen && (
           <m.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
           >
             <ChatPanel locale={locale} onClose={toggle} />
           </m.div>

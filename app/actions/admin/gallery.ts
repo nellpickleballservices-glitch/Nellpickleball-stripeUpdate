@@ -116,19 +116,36 @@ export async function updateGalleryItemAction(
 }
 
 const GALLERY_BUCKET = 'gallery'
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
+const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/webm', 'video/quicktime']
+const ALLOWED_MIME = [...ALLOWED_IMAGE_MIME, ...ALLOWED_VIDEO_MIME]
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10 MB
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100 MB — videos are heavy even when compressed
 
 async function ensureBucket() {
   const { data: buckets } = await supabaseAdmin.storage.listBuckets()
   if (!buckets?.find((b) => b.name === GALLERY_BUCKET)) {
     const { error } = await supabaseAdmin.storage.createBucket(GALLERY_BUCKET, {
       public: true,
-      fileSizeLimit: MAX_FILE_SIZE,
+      fileSizeLimit: MAX_VIDEO_SIZE,
       allowedMimeTypes: ALLOWED_MIME,
     })
     if (error && !error.message.includes('already exists')) {
       throw error
+    }
+  } else {
+    // Bucket exists — keep its MIME-type allowlist and size cap in sync with
+    // the constants above so newly-allowed types (e.g. video) take effect.
+    const { error } = await supabaseAdmin.storage.updateBucket(GALLERY_BUCKET, {
+      public: true,
+      fileSizeLimit: MAX_VIDEO_SIZE,
+      allowedMimeTypes: ALLOWED_MIME,
+    })
+    if (error) {
+      console.error('[gallery] updateBucket error:', error.message)
+      // Don't throw — the bucket may still accept the file even if updating
+      // its settings failed (e.g. permission scope). The upload below will
+      // surface its own error if the existing allowlist rejects the file.
     }
   }
 }
@@ -138,14 +155,27 @@ export async function uploadGalleryFileAction(formData: FormData): Promise<{ url
 
   const file = formData.get('file') as File
   if (!file || file.size === 0) throw new Error('No file provided')
-  if (!ALLOWED_MIME.includes(file.type)) {
-    throw new Error('Only JPEG, PNG, WebP, and GIF images are allowed')
+
+  const isVideo = ALLOWED_VIDEO_MIME.includes(file.type)
+  const isImage = ALLOWED_IMAGE_MIME.includes(file.type)
+  if (!isImage && !isVideo) {
+    throw new Error('Only JPEG/PNG/WebP/GIF images and MP4/WebM/MOV videos are allowed')
   }
-  if (file.size > MAX_FILE_SIZE) throw new Error('File must be smaller than 10 MB')
+
+  const sizeLimit = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE
+  if (file.size > sizeLimit) {
+    const mb = Math.round(sizeLimit / 1024 / 1024)
+    throw new Error(`File must be smaller than ${mb} MB`)
+  }
 
   await ensureBucket()
 
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const MIME_TO_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+    'image/gif': 'gif', 'video/mp4': 'mp4', 'video/webm': 'webm',
+    'video/quicktime': 'mov',
+  }
+  const ext = MIME_TO_EXT[file.type] ?? (isVideo ? 'mp4' : 'jpg')
   const fileName = `${crypto.randomUUID()}.${ext}`
 
   const { error } = await supabaseAdmin.storage
@@ -153,8 +183,14 @@ export async function uploadGalleryFileAction(formData: FormData): Promise<{ url
     .upload(fileName, file, { contentType: file.type, upsert: false })
 
   if (error) {
-    console.error('[gallery] upload error:', error.message)
-    throw new Error('Upload failed')
+    console.error('[gallery] upload error:', error.message, {
+      contentType: file.type,
+      size: file.size,
+      bucket: GALLERY_BUCKET,
+    })
+    // Surface the actual Supabase message so the UI can show a real cause
+    // (e.g. "mime type not allowed", "Payload too large").
+    throw new Error(`Upload failed: ${error.message}`)
   }
 
   const { data: urlData } = supabaseAdmin.storage

@@ -9,6 +9,13 @@ import { createClient } from '@/lib/supabase/server'
  * Redirects non-admin users to home page.
  */
 export async function requireAdmin() {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    process.env.DEV_BYPASS_AUTH === 'true'
+  ) {
+    return { id: 'dev-bypass', app_metadata: { role: 'admin' } } as never
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

@@ -88,7 +88,7 @@ export function CountrySelect({
           setOpen(!open)
           if (open) setSearch('')
         }}
-        className="w-full bg-charcoal text-offwhite border border-[#1E293B] focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors text-left flex items-center gap-2"
+        className="w-full bg-charcoal text-offwhite border border-white/20 focus:border-turquoise rounded-lg px-4 py-2.5 outline-none transition-colors text-left flex items-center gap-2"
       >
         {selectedCountry && (
           <span className="text-lg">{selectedCountry.flag}</span>
@@ -110,7 +110,7 @@ export function CountrySelect({
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-charcoal border border-[#1E293B] rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-charcoal border border-white/20 rounded-lg shadow-lg overflow-hidden">
           <div className="p-2">
             <input
               ref={searchRef}
@@ -124,7 +124,7 @@ export function CountrySelect({
                 }
               }}
               placeholder={locale === 'es' ? 'Buscar...' : 'Search...'}
-              className="w-full bg-midnight text-offwhite border border-[#1E293B] focus:border-turquoise rounded-md px-3 py-1.5 outline-none text-sm"
+              className="w-full bg-midnight text-offwhite border border-white/20 focus:border-turquoise rounded-md px-3 py-1.5 outline-none text-sm"
             />
           </div>
           <ul className="max-h-60 overflow-y-auto">
@@ -144,7 +144,7 @@ export function CountrySelect({
                       c.code === selected
                         ? 'text-turquoise'
                         : 'text-offwhite'
-                    } ${isDR ? 'border-b border-[#1E293B]' : ''}`}
+                    } ${isDR ? 'border-b border-white/20' : ''}`}
                   >
                     <span className="text-base">{c.flag}</span>
                     <span>

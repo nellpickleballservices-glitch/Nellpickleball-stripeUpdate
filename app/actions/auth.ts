@@ -18,17 +18,23 @@ export async function signUpAction(
   _prevState: AuthActionResult,
   formData: FormData,
 ): Promise<AuthActionResult> {
-  const rawFirstName = formData.get('firstName') as string
-  const rawLastName = formData.get('lastName') as string
-  const email = formData.get('email') as string
-  const phone = formData.get('phone') as string
-  const password = formData.get('password') as string
-  const confirmPassword = formData.get('confirmPassword') as string
+  const rawFirstName = String(formData.get('firstName') ?? '')
+  const rawLastName = String(formData.get('lastName') ?? '')
+  const email = String(formData.get('email') ?? '')
+  const phone = String(formData.get('phone') ?? '')
+  const password = String(formData.get('password') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '')
   const planType = formData.get('planType') as string | null  // optional
   const country = extractCountry(formData)
 
   // Server-side validation
   const errors: Record<string, string> = {}
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email || !EMAIL_RE.test(email) || email.length > 200) {
+    errors.email = 'Please enter a valid email'
+  }
+
   const firstNameError = validateName(rawFirstName)
   const lastNameError = validateName(rawLastName)
   const passwordError = validatePasswordLength(password)
@@ -94,8 +100,8 @@ export async function loginAction(
   _prevState: AuthActionResult,
   formData: FormData,
 ): Promise<AuthActionResult> {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const email = String(formData.get('email') ?? '')
+  const password = String(formData.get('password') ?? '')
   const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithPassword({ email, password })

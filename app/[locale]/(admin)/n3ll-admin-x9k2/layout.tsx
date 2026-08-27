@@ -16,22 +16,23 @@ export default async function AdminLayout({
 }) {
   const { locale } = await params
 
-  // Layer 2 admin protection: server-side role check before rendering
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const devBypass =
+    process.env.NODE_ENV !== 'production' &&
+    process.env.DEV_BYPASS_AUTH === 'true'
 
-  if (!user) {
-    redirect('/login')
-  }
+  if (!devBypass) {
+    // Layer 2 admin protection: server-side role check before rendering
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (user.app_metadata?.role !== 'admin') {
-    redirect('/')
+    if (!user) redirect('/login')
+    if (user.app_metadata?.role !== 'admin') redirect('/')
   }
 
   return (
     <div className="flex min-h-screen">
       <AdminSidebar locale={locale} />
-      <main className="flex-1 bg-[#0F172A] p-6 overflow-y-auto md:ml-64">
+      <main className="admin-scope flex-1 bg-gray-50 text-gray-900 p-6 overflow-y-auto md:ml-64">
         {children}
       </main>
     </div>

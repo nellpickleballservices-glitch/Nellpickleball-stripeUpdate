@@ -19,9 +19,9 @@ export async function updateProfileAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'not_authenticated' }
 
-  const rawFirstName = formData.get('firstName') as string
-  const rawLastName = formData.get('lastName') as string
-  const phone = formData.get('phone') as string
+  const rawFirstName = String(formData.get('firstName') ?? '')
+  const rawLastName = String(formData.get('lastName') ?? '')
+  const phone = String(formData.get('phone') ?? '')
 
   // Validate
   const details: string[] = []
@@ -58,9 +58,9 @@ export async function changePasswordAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'not_authenticated' }
 
-  const currentPassword = formData.get('currentPassword') as string
-  const newPassword = formData.get('newPassword') as string
-  const confirmPassword = formData.get('confirmPassword') as string
+  const currentPassword = String(formData.get('currentPassword') ?? '')
+  const newPassword = String(formData.get('newPassword') ?? '')
+  const confirmPassword = String(formData.get('confirmPassword') ?? '')
 
   // Validate new password
   const passwordError = validatePasswordLength(newPassword)
@@ -70,8 +70,9 @@ export async function changePasswordAction(
   if (matchError) return { error: 'passwords_dont_match' }
 
   // Verify current password by attempting sign-in
+  if (!user.email) return { error: 'no_email_on_account' }
   const { error: signInError } = await supabase.auth.signInWithPassword({
-    email: user.email!,
+    email: user.email,
     password: currentPassword,
   })
   if (signInError) return { error: 'current_password_wrong' }

@@ -158,7 +158,11 @@ ${eventsText}`
   // ---------------------------------------------------------------------------
   // OpenAI streaming call
   // ---------------------------------------------------------------------------
-  const recentMessages = messages.slice(-10)
+  const MAX_MSG_LEN = 1000
+  const recentMessages = messages.slice(-10).map((m) => ({
+    ...m,
+    content: typeof m.content === 'string' ? m.content.slice(0, MAX_MSG_LEN) : '',
+  }))
 
   try {
     const completion = await openai.chat.completions.create({
