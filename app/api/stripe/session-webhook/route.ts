@@ -103,7 +103,7 @@ async function handleCompleted(checkout: Stripe.Checkout.Session): Promise<void>
   const row = data?.[0]
   if (!row) return // already processed — a duplicate delivery
 
-  revalidateTag(SESSIONS_TAG)
+  revalidateTag(SESSIONS_TAG, { expire: 0 })
 
   const session = row.play_sessions as unknown as
     | { title_en: string; title_es: string; start_time: string; end_time: string }
@@ -140,5 +140,5 @@ async function handleExpired(checkout: Stripe.Checkout.Session): Promise<void> {
 
   if (error) throw new Error(`releasing expired hold failed: ${error.message}`)
 
-  revalidateTag(SESSIONS_TAG)
+  revalidateTag(SESSIONS_TAG, { expire: 0 })
 }

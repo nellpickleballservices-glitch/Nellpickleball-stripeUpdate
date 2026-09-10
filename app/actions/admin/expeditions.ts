@@ -180,7 +180,7 @@ export async function createExpeditionAction(formData: FormData): Promise<{ succ
     throw new Error('Operation failed')
   }
 
-  revalidateTag(EXPEDITIONS_TAG)
+  revalidateTag(EXPEDITIONS_TAG, 'max')
   revalidatePath('/')
   return { success: true }
 }
@@ -204,7 +204,7 @@ export async function updateExpeditionAction(
     throw new Error('Operation failed')
   }
 
-  revalidateTag(EXPEDITIONS_TAG)
+  revalidateTag(EXPEDITIONS_TAG, 'max')
   revalidatePath('/')
   revalidatePath(`/expeditions/${id}`)
   return { success: true }
@@ -221,55 +221,16 @@ export async function deleteExpeditionAction(id: string): Promise<{ success: boo
     throw new Error('Operation failed')
   }
 
-  revalidateTag(EXPEDITIONS_TAG)
+  revalidateTag(EXPEDITIONS_TAG, 'max')
   revalidatePath('/')
   return { success: true }
-}
-
-const EXPEDITION_BUCKET = 'expeditions'
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
-
-async function ensureBucket() {
-  const { data: buckets } = await supabaseAdmin.storage.listBuckets()
-  if (!buckets?.find((b) => b.name === EXPEDITION_BUCKET)) {
-    const { error } = await supabaseAdmin.storage.createBucket(EXPEDITION_BUCKET, {
-      public: true,
-      fileSizeLimit: MAX_FILE_SIZE,
-      allowedMimeTypes: ALLOWED_MIME,
-    })
-    if (error && !error.message.includes('already exists')) throw error
-  }
 }
 
 export async function uploadExpeditionImageAction(formData: FormData): Promise<{ url: string }> {
   await requireAdmin()
 
+  const { uploadToBlob } = await import('@/lib/blob')
   const file = formData.get('file') as File
-  if (!file || file.size === 0) throw new Error('No file provided')
-  if (!ALLOWED_MIME.includes(file.type)) throw new Error('Only JPEG, PNG, WebP, and GIF images are allowed')
-  if (file.size > MAX_FILE_SIZE) throw new Error('File must be smaller than 10 MB')
-
-  await ensureBucket()
-
-  const MIME_TO_EXT: Record<string, string> = {
-    'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
-  }
-  const ext = MIME_TO_EXT[file.type] ?? 'jpg'
-  const fileName = `${crypto.randomUUID()}.${ext}`
-
-  const { error } = await supabaseAdmin.storage
-    .from(EXPEDITION_BUCKET)
-    .upload(fileName, file, { contentType: file.type, upsert: false })
-
-  if (error) {
-    console.error('[expeditions] upload error:', error.message)
-    throw new Error('Upload failed')
-  }
-
-  const { data: urlData } = supabaseAdmin.storage
-    .from(EXPEDITION_BUCKET)
-    .getPublicUrl(fileName)
-
-  return { url: urlData.publicUrl }
+  const url = await uploadToBlob(file, { folder: 'expeditions' })
+  return { url }
 }

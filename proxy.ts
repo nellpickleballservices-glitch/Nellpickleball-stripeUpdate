@@ -8,15 +8,20 @@ import {
   isAuthRedirectRoute,
   isCompleteProfileRoute,
 } from '@/lib/middleware/route-helpers'
-import {
-  setMembershipCookie,
-  getMembershipFromCookie,
-} from '@/lib/middleware/cookie-signing'
 
 const intlMiddleware = createMiddleware(routing)
 
 export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  // DEV BYPASS: skip all auth checks for admin routes in development
+  const devBypass =
+    process.env.NODE_ENV !== 'production' &&
+    process.env.DEV_BYPASS_AUTH === 'true'
+
+  if (devBypass && pathname.includes('/n3ll-admin-x9k2')) {
+    return intlMiddleware(request)
+  }
 
   // PUBLIC ROUTES: Only run i18n middleware, skip Supabase entirely.
   // This eliminates the getUser() roundtrip on /, /about, /learn, /events, /contact, /pricing, etc.
@@ -100,48 +105,8 @@ export default async function proxy(request: NextRequest) {
     }
   }
 
-  // MEMBER ROUTES: Check membership status (with cookie cache)
-  // LOCKED DECISION (CONTEXT.md): Authenticated but unsubscribed users accessing /member/* go to /pricing.
-  //
-  // Play-session booking is deliberately NOT gated here — it lives on the public
-  // /sessions pages and is open to everyone, members and non-members alike.
-  if (user && pathname.includes('/member/')) {
-    // First: check signed cookie cache for membership status
-    const cached = await getMembershipFromCookie(request)
-
-    if (cached && cached.active) {
-      // Cache hit — skip DB query, proceed to intl response
-    } else if (cached === null) {
-      // Cache miss or expired — query DB for membership status
-      const { data: membership } = await supabase
-        .from('memberships')
-        .select('status, plan')
-        .eq('user_id', user.id)
-        .in('status', ['active'])
-        .maybeSingle()
-
-      if (!membership) {
-        const url = request.nextUrl.clone()
-        url.pathname = '/'
-        return NextResponse.redirect(url)
-      }
-
-      // Active membership — cache in signed cookie for 5 minutes
-      await setMembershipCookie(supabaseResponse, {
-        active: true,
-        planType: membership.plan ?? null,
-        cachedAt: Date.now(),
-      })
-    } else {
-      // cached.active is false — redirect to pricing
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      return NextResponse.redirect(url)
-    }
-  }
-
   // Compose next-intl middleware after Supabase auth check.
-  // Copy Supabase auth cookies (and membership cache cookie) into the intl response.
+  // Copy Supabase auth cookies into the intl response.
   const intlResponse = intlMiddleware(request)
   supabaseResponse.cookies.getAll().forEach((cookie) => {
     intlResponse.cookies.set(cookie.name, cookie.value, cookie)

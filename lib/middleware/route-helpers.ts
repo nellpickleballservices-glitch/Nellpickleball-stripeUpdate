@@ -1,4 +1,4 @@
-const PROTECTED_PREFIXES = ['/member/', '/n3ll-admin-x9k2/']
+const PROTECTED_PREFIXES = ['/n3ll-admin-x9k2/']
 const AUTH_REDIRECT_ROUTES = ['/login', '/signup']
 const COMPLETE_PROFILE_PATH = '/signup/complete-profile'
 

@@ -6,6 +6,7 @@ import { resend } from '@/lib/resend'
 import type { UserWithDetails } from '@/lib/types/admin'
 import type { PaymentStatus, PaymentMethod } from '@/lib/types/sessions'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const USER_PAGE_SIZE = 25
 
 /** One row of a user's play-session history, as rendered in the admin slide-out. */
@@ -37,7 +38,7 @@ export async function searchUsersAction(
 
   let q = supabaseAdmin
     .from('admin_users_view')
-    .select('id, first_name, last_name, phone, country, email, last_sign_in_at, banned_until, created_at', { count: 'exact' })
+    .select('id, first_name, last_name, phone, country, is_local, email, last_sign_in_at, banned_until, created_at', { count: 'exact' })
 
   if (trimmed) {
     // Escape PostgREST special characters to prevent filter injection
@@ -56,19 +57,7 @@ export async function searchUsersAction(
   }
   if (!data) return { users: [], total: 0, page }
 
-  // Batch-fetch memberships for returned user IDs
-  const userIds = data.map((u) => u.id)
-  const { data: memberships } = await supabaseAdmin
-    .from('memberships')
-    .select('user_id, status, plan')
-    .in('user_id', userIds)
-
-  const membershipMap = new Map(
-    (memberships ?? []).map((m) => [m.user_id, m])
-  )
-
   const users: UserWithDetails[] = data.map((u) => {
-    const membership = membershipMap.get(u.id)
     return {
       id: u.id,
       email: u.email ?? '',
@@ -77,9 +66,10 @@ export async function searchUsersAction(
       phone: u.phone,
       country: u.country ?? null,
       created_at: u.created_at,
-      membership_status: membership?.status ?? null,
-      membership_plan: membership?.plan ?? null,
+      membership_status: null,
+      membership_plan: null,
       is_banned: u.banned_until ? new Date(u.banned_until).getTime() > Date.now() : false,
+      is_local: u.is_local ?? false,
     }
   })
 
@@ -92,22 +82,16 @@ export async function searchUsersAction(
  */
 export async function getUserDetailsAction(userId: string) {
   await requireAdmin()
+  if (!UUID_RE.test(userId)) throw new Error('Invalid user ID')
 
   // Fetch user from admin_users_view (profile + auth fields in one query)
   const { data: viewUser, error: viewError } = await supabaseAdmin
     .from('admin_users_view')
-    .select('id, first_name, last_name, phone, country, email, banned_until, created_at')
+    .select('id, first_name, last_name, phone, country, is_local, email, banned_until, created_at')
     .eq('id', userId)
     .single()
 
   if (viewError || !viewUser) throw new Error('User not found')
-
-  // Fetch membership
-  const { data: membership } = await supabaseAdmin
-    .from('memberships')
-    .select('plan, status, current_period_end, stripe_subscription_id')
-    .eq('user_id', userId)
-    .maybeSingle()
 
   // Fetch play-session sign-up history (last 20).
   //
@@ -152,13 +136,8 @@ export async function getUserDetailsAction(userId: string) {
     is_banned: viewUser.banned_until
       ? new Date(viewUser.banned_until).getTime() > Date.now()
       : false,
-    membership: membership
-      ? {
-          plan: membership.plan,
-          status: membership.status,
-          current_period_end: membership.current_period_end,
-        }
-      : null,
+    is_local: viewUser.is_local ?? false,
+    membership: null,
     signups: signups ?? [],
   }
 }
@@ -169,6 +148,7 @@ export async function getUserDetailsAction(userId: string) {
  */
 export async function disableUserAction(userId: string) {
   await requireAdmin()
+  if (!UUID_RE.test(userId)) throw new Error('Invalid user ID')
 
   // Look up the email before banning — it's the only link to session_signups.
   const { data: viewUser } = await supabaseAdmin
@@ -210,6 +190,7 @@ export async function disableUserAction(userId: string) {
  */
 export async function enableUserAction(userId: string) {
   await requireAdmin()
+  if (!UUID_RE.test(userId)) throw new Error('Invalid user ID')
 
   const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
     ban_duration: 'none',
@@ -224,6 +205,7 @@ export async function enableUserAction(userId: string) {
  */
 export async function triggerPasswordResetAction(userId: string) {
   await requireAdmin()
+  if (!UUID_RE.test(userId)) throw new Error('Invalid user ID')
 
   // Get user email from admin_users_view
   const { data: viewUser, error: viewError } = await supabaseAdmin
@@ -267,6 +249,7 @@ export async function triggerPasswordResetAction(userId: string) {
  */
 export async function updateUserCountryAction(userId: string, country: string) {
   await requireAdmin()
+  if (!UUID_RE.test(userId)) throw new Error('Invalid user ID')
 
   if (!/^[A-Z]{2}$/.test(country)) throw new Error('Invalid country code')
 
@@ -277,6 +260,27 @@ export async function updateUserCountryAction(userId: string, country: string) {
 
   if (error) {
     console.error('[users] updateUserCountry error:', error.message)
+    throw new Error('Operation failed')
+  }
+
+  return { success: true }
+}
+
+/**
+ * Toggle a user's local status (admin only).
+ * Locals pay the base session price; non-locals pay base + tourist surcharge.
+ */
+export async function toggleLocalStatusAction(userId: string, isLocal: boolean) {
+  await requireAdmin()
+  if (!UUID_RE.test(userId)) throw new Error('Invalid user ID')
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({ is_local: isLocal })
+    .eq('id', userId)
+
+  if (error) {
+    console.error('[users] toggleLocalStatus error:', error.message)
     throw new Error('Operation failed')
   }
 

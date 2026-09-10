@@ -11,45 +11,6 @@ interface UserTableProps {
   onSelectUser: (userId: string) => void
 }
 
-function StatusBadge({ user, t }: { user: UserWithDetails; t: ReturnType<typeof useTranslations> }) {
-  if (user.is_banned) {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-        {t('userBanned')}
-      </span>
-    )
-  }
-
-  if (!user.membership_status) {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-        {t('noMembership')}
-      </span>
-    )
-  }
-
-  const statusStyles: Record<string, string> = {
-    active: 'bg-green-100 text-green-700',
-    past_due: 'bg-yellow-100 text-yellow-700',
-    cancelled: 'bg-red-100 text-red-700',
-  }
-
-  const statusLabels: Record<string, string> = {
-    active: t('membershipActive'),
-    past_due: t('membershipPastDue'),
-    cancelled: t('membershipCancelled'),
-  }
-
-  const style = statusStyles[user.membership_status] ?? 'bg-gray-100 text-gray-700'
-  const label = statusLabels[user.membership_status] ?? user.membership_status
-
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${style}`}>
-      {label}
-    </span>
-  )
-}
-
 export function UserTable({ users, total, page, onPageChange, onSelectUser }: UserTableProps) {
   const t = useTranslations('Admin')
   const totalPages = Math.max(1, Math.ceil(total / 20))
@@ -67,9 +28,6 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
                 {t('userEmail')}
               </th>
               <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
-                {t('userPlan')}
-              </th>
-              <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
                 {t('userStatus')}
               </th>
               <th className="text-left text-xs font-medium text-gray-700 uppercase tracking-wider py-3 px-4">
@@ -80,7 +38,7 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center text-gray-600 py-8">
+                <td colSpan={4} className="text-center text-gray-600 py-8">
                   {t('noResults')}
                 </td>
               </tr>
@@ -97,11 +55,16 @@ export function UserTable({ users, total, page, onPageChange, onSelectUser }: Us
                   <td className="py-3 px-4 text-gray-700 text-sm">
                     {user.email}
                   </td>
-                  <td className="py-3 px-4 text-gray-700 text-sm capitalize">
-                    {user.membership_plan ?? '-'}
-                  </td>
                   <td className="py-3 px-4">
-                    <StatusBadge user={user} t={t} />
+                    {user.is_banned ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                        {t('userBanned')}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        {t('membershipActive')}
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-gray-600 text-sm">
                     {new Date(user.created_at).toLocaleDateString()}

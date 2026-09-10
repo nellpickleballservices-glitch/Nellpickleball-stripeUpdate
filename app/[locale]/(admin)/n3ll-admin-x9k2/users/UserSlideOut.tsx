@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { getUserDetailsAction, disableUserAction, enableUserAction, triggerPasswordResetAction, updateUserCountryAction } from '@/app/actions/admin'
+import { getUserDetailsAction, disableUserAction, enableUserAction, triggerPasswordResetAction, updateUserCountryAction, toggleLocalStatusAction } from '@/app/actions/admin'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { countryByCode } from '@/lib/data/countries'
 import { CountrySelect } from '@/components/CountrySelect'
@@ -212,44 +212,29 @@ export function UserSlideOut({ userId, onClose }: UserSlideOutProps) {
                       </span>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Membership Section */}
-              <div className="mb-6 pt-4 border-t border-gray-200">
-                <h3 className="text-xs uppercase tracking-wider text-gray-600 font-medium mb-3">
-                  {t('membership')}
-                </h3>
-                {details.membership ? (
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">{t('userPlan')}</span>
-                      <span className="text-midnight capitalize">{details.membership.plan}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">{t('userStatus')}</span>
-                      <span className={`text-sm font-medium ${
-                        details.membership.status === 'active' ? 'text-green-700' :
-                        details.membership.status === 'past_due' ? 'text-yellow-700' :
-                        'text-red-700'
-                      }`}>
-                        {details.membership.status === 'active' ? t('membershipActive') :
-                         details.membership.status === 'past_due' ? t('membershipPastDue') :
-                         t('membershipCancelled')}
-                      </span>
-                    </div>
-                    {details.membership.current_period_end && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Period End</span>
-                        <span className="text-midnight">
-                          {new Date(details.membership.current_period_end).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="text-gray-600">{t('localStatus')}</span>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleLocalStatusAction(userId!, !details.is_local)
+                          await fetchDetails(userId!)
+                        } catch {
+                          setMessage({ type: 'error', text: 'Failed to update local status' })
+                        }
+                      }}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-turquoise/50 ${
+                        details.is_local ? 'bg-green-500' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          details.is_local ? 'translate-x-4' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
                   </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">{t('noMembership')}</p>
-                )}
+                </div>
               </div>
 
               {/* Session sign-up history */}

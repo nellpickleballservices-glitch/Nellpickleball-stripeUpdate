@@ -120,7 +120,12 @@ export async function resetPasswordAction(
   _prevState: AuthActionResult,
   formData: FormData,
 ): Promise<AuthActionResult> {
-  const email = formData.get('email') as string
+  const email = (formData.get('email') as string)?.trim().toLowerCase() ?? ''
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!email || !EMAIL_RE.test(email) || email.length > 200) {
+    return { errors: { email: 'Please enter a valid email' } }
+  }
+
   const supabase = await createClient()
   const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 

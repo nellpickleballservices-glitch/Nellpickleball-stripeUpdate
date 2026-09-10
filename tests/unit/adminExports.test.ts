@@ -25,6 +25,7 @@ describe('Admin barrel re-exports', () => {
     'enableUserAction',
     'triggerPasswordResetAction',
     'updateUserCountryAction',
+    'toggleLocalStatusAction',
     'getContentBlocksAction',
     'updateContentBlockAction',
     'reorderContentBlocksAction',

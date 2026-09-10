@@ -31,7 +31,31 @@
       "Bash(taskkill:*)",
       "WebFetch(domain:www.pickleheads.com)",
       "Bash(git add:*)",
-      "Bash(git commit -m ':*)"
+      "Bash(git commit -m ':*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo:*)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -l \"profiles\\\\|memberships\\\\|tourists\" /c/Users/joseu/Desktop/simplenellpickleballsite/supabase/migrations/*.sql)",
+      "WebSearch",
+      "Bash(grep -E \"CREATE TABLE|create table\" \"C:/Users/joseu/Desktop/simplenellpickleballsite/supabase/migrations\"/*.sql)",
+      "Bash(wc -l \"C:/Users/joseu/Desktop/simplenellpickleballsite/supabase/migrations\"/*.sql)",
+      "Bash(npm install:*)",
+      "Bash(scoop install:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(grep -E \"page\\\\.tsx$\")",
+      "Bash(npm outdated:*)",
+      "Bash(npm update:*)",
+      "Bash(node -e \"const path = require\\('path'\\); const p = path.join\\(path.dirname\\(require.resolve\\('next/package.json'\\)\\), 'dist/docs'\\); const fs = require\\('fs'\\); if \\(fs.existsSync\\(p\\)\\) { console.log\\(fs.readdirSync\\(p\\).join\\('\\\\n'\\)\\); } else { console.log\\('no docs dir'\\); }\")",
+      "Bash(python3 -c \"import sys,json; lines=sys.stdin.readlines\\(\\); last=json.loads\\(lines[-1]\\); content=last.get\\('message',{}\\).get\\('content',[]\\); [print\\(c.get\\('text',''\\)\\) for c in content if c.get\\('type'\\)=='text']\")",
+      "Bash(claude mcp:*)",
+      "Bash(git diff:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

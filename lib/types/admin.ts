@@ -83,4 +83,5 @@ export interface UserWithDetails {
   membership_status: string | null
   membership_plan: string | null
   is_banned: boolean
+  is_local: boolean
 }

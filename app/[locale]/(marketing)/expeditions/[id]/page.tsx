@@ -148,11 +148,7 @@ export default async function ExpeditionDetailPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Thin accent line */}
-          <div
-            className="w-24 h-0.5 rounded-full mb-12"
-            style={{ background: 'linear-gradient(to right, #38BDF8, #FF6B2C, transparent)' }}
-          />
+          <div className="mb-12" />
 
           {/* Block-based detail content */}
           {blocks.length > 0 ? (

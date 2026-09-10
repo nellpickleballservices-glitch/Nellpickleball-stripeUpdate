@@ -15,8 +15,7 @@ export default function SessionDetailLoading() {
           <div className="h-5 w-24 bg-gray-200 rounded" />
         </div>
 
-        {/* Divider */}
-        <div className="w-24 h-0.5 bg-gray-200 rounded-full mb-12" />
+        <div className="mb-12" />
 
         {/* Content blocks */}
         <div className="space-y-4">

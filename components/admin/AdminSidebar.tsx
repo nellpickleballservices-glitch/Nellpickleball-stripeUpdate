@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 // Heroicons mini (20x20) — kept inline to avoid a dependency
@@ -34,6 +34,11 @@ const icons: Record<string, ReactNode> = {
       <path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 0 0 .281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 1 0 3 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 0 0 2.274 1.765 11.842 11.842 0 0 0 .976.544l.062.029.018.008.006.003ZM10 11.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" clipRule="evenodd" />
     </svg>
   ),
+  specialEvents: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+      <path fillRule="evenodd" d="M5 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h.5A2.5 2.5 0 0 1 19 6.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 1 15.5v-9A2.5 2.5 0 0 1 3.5 4H4V3a1 1 0 0 1 1-1Zm5.75 7.25a.75.75 0 0 0-1.5 0v1.5h-1.5a.75.75 0 0 0 0 1.5h1.5v1.5a.75.75 0 0 0 1.5 0v-1.5h1.5a.75.75 0 0 0 0-1.5h-1.5v-1.5Z" clipRule="evenodd" />
+    </svg>
+  ),
   interests: (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
       <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM7 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm7-1a1 1 0 1 1-2 0 1 1 0 0 1 2 0Zm-.464 5.535a1 1 0 1 0-1.415-1.414 3 3 0 0 1-4.242 0 1 1 0 0 0-1.415 1.414 5 5 0 0 0 7.072 0Z" clipRule="evenodd" />
@@ -52,6 +57,7 @@ const navItems = [
   { key: 'cms', href: '/n3ll-admin-x9k2/cms' },
   { key: 'gallery', href: '/n3ll-admin-x9k2/gallery' },
   { key: 'expeditions', href: '/n3ll-admin-x9k2/expeditions' },
+  { key: 'specialEvents', href: '/n3ll-admin-x9k2/special-events' },
   { key: 'sessions', href: '/n3ll-admin-x9k2/sessions' },
   { key: 'interests', href: '/n3ll-admin-x9k2/interests' },
 ]
@@ -59,7 +65,15 @@ const navItems = [
 export function AdminSidebar({ locale }: { locale: string }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const t = useTranslations('Admin')
+
+  // Eagerly prefetch all admin pages on mount so navigation feels instant
+  useEffect(() => {
+    navItems.forEach((item) => {
+      router.prefetch(`/${locale}${item.href}`)
+    })
+  }, [locale, router])
 
   const isActive = (href: string) => {
     // Strip locale prefix for comparison

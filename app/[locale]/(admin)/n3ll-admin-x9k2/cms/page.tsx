@@ -11,6 +11,8 @@ import {
   getHeroLocationsAction,
   createHeroLocationAction,
   deleteHeroLocationAction,
+  getTouristSurchargeAction,
+  updateTouristSurchargeAction,
 } from '@/app/actions/admin'
 import type { ContentBlock } from '@/lib/types/admin'
 
@@ -49,7 +51,7 @@ function formatBlockKey(key: string): string {
   return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
 }
 
-type Section = 'blocks' | 'heroLocations'
+type Section = 'blocks' | 'heroLocations' | 'settings'
 
 export default function AdminCmsPage() {
   const t = useTranslations('Admin')
@@ -73,9 +75,16 @@ export default function AdminCmsPage() {
   const [addingLocation, setAddingLocation] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
 
+  // Settings state
+  const [surcharge, setSurcharge] = useState('')
+  const [surchargeLoading, setSurchargeLoading] = useState(false)
+  const [surchargeSaved, setSurchargeSaved] = useState(false)
+  const [surchargeError, setSurchargeError] = useState<string | null>(null)
+
   useEffect(() => {
     loadBlocks()
     loadHeroLocations()
+    loadSettings()
   }, [])
 
   async function loadHeroLocations() {
@@ -111,6 +120,35 @@ export default function AdminCmsPage() {
       await loadHeroLocations()
     } catch (err) {
       console.error('Failed to delete hero location:', err)
+    }
+  }
+
+  async function loadSettings() {
+    try {
+      const pct = await getTouristSurchargeAction()
+      setSurcharge(String(pct))
+    } catch (err) {
+      console.error('Failed to load settings:', err)
+    }
+  }
+
+  async function handleSaveSurcharge(e: React.FormEvent) {
+    e.preventDefault()
+    const pct = parseInt(surcharge, 10)
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      setSurchargeError(t('invalidPrice'))
+      return
+    }
+    setSurchargeLoading(true)
+    setSurchargeError(null)
+    try {
+      await updateTouristSurchargeAction(pct)
+      setSurchargeSaved(true)
+      setTimeout(() => setSurchargeSaved(false), 2000)
+    } catch (err) {
+      setSurchargeError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSurchargeLoading(false)
     }
   }
 
@@ -198,9 +236,53 @@ export default function AdminCmsPage() {
         >
           {t('heroLocations')}
         </button>
+        <button
+          onClick={() => setSection('settings')}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            section === 'settings'
+              ? 'bg-midnight text-white'
+              : 'bg-white text-midnight border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          {t('settings')}
+        </button>
       </div>
 
-      {section === 'heroLocations' ? (
+      {section === 'settings' ? (
+        <div className="space-y-4">
+          <form onSubmit={handleSaveSurcharge} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+            <div>
+              <label htmlFor="tourist-surcharge" className="block text-sm font-medium text-midnight mb-1">
+                {t('touristSurcharge')}
+              </label>
+              <p className="text-xs text-gray-500 mb-2">{t('surchargeDescription')}</p>
+              <div className="flex items-center gap-2">
+                <input
+                  id="tourist-surcharge"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={surcharge}
+                  onChange={(e) => setSurcharge(e.target.value)}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600">%</span>
+              </div>
+            </div>
+            {surchargeError && <p className="text-red-600 text-sm">{surchargeError}</p>}
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={surchargeLoading}
+                className="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {surchargeLoading ? t('saving') : t('save')}
+              </button>
+              {surchargeSaved && <span className="text-green-700 text-sm">{t('surchargeSaved')}</span>}
+            </div>
+          </form>
+        </div>
+      ) : section === 'heroLocations' ? (
         <div className="space-y-4">
           <form onSubmit={handleAddLocation} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col sm:flex-row gap-3 sm:items-end">
             <div className="flex-1">
