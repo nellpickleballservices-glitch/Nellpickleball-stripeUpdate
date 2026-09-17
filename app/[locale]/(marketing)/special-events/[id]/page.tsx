@@ -4,12 +4,14 @@ import { Link } from '@/i18n/navigation'
 import { ScrollReveal } from '@/components/motion/ScrollReveal'
 import { ImageCarousel } from '@/components/public/ImageCarousel'
 import { SpecialEventSignupForm } from '@/components/public/SpecialEventSignupForm'
+import { ExpeditionContent } from '@/components/public/ExpeditionContent'
 import { getPublicSpecialEventAction } from '@/app/actions/special-events'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { cancelPendingSpecialEventSignupAction } from '@/app/actions/special-event-signup'
 import { isStripeConfigured } from '@/lib/stripe'
 import { formatSessionDate, formatSessionTimeRange, formatPrice } from '@/lib/sessions'
+import { parseBlocks } from '@/lib/types/expedition-blocks'
 import type { Metadata } from 'next'
 
 interface PageProps {
@@ -58,7 +60,8 @@ export default async function SpecialEventDetailPage({ params, searchParams }: P
 
   const title = locale === 'en' ? event.title_en : event.title_es
   const description = locale === 'en' ? event.description_en : event.description_es
-  const details = locale === 'en' ? event.details_en : event.details_es
+  const detailsRaw = locale === 'en' ? event.details_en : event.details_es
+  const blocks = parseBlocks(detailsRaw)
   const images = event.image_urls?.length ? event.image_urls : event.image_url ? [event.image_url] : []
 
   const dateLabel = formatSessionDate(event.event_date, locale)
@@ -266,11 +269,7 @@ export default async function SpecialEventDetailPage({ params, searchParams }: P
           )}
 
           {/* Details (rich text content) */}
-          {details && (
-            <div className="prose prose-slate max-w-none whitespace-pre-line">
-              {details}
-            </div>
-          )}
+          {blocks.length > 0 && <ExpeditionContent blocks={blocks} />}
         </ScrollReveal>
 
         {canceled && (

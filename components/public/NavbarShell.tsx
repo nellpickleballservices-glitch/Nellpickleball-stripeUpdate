@@ -35,7 +35,7 @@ export function NavbarShell({ children }: { children: React.ReactNode }) {
       <nav
         data-scrolled={scrolled || undefined}
         className={[
-          'fixed top-0 left-0 right-0 z-50 px-6 flex items-center justify-between overflow-visible md:overflow-hidden',
+          'fixed top-0 left-0 right-0 z-50 px-6 flex items-center justify-between overflow-visible',
           'transition-[height,background-color,border-radius,box-shadow,border-color,backdrop-filter] duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]',
           scrolled
             ? 'md:h-[70px] h-[126px] md:rounded-b-2xl md:bg-[var(--color-cream)]/95 bg-[var(--color-cream)] md:backdrop-blur-xl backdrop-blur-md md:shadow-md md:border-b md:border-black/[0.06] border-b-[1.5px] border-[var(--color-divider)]'

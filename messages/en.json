@@ -597,6 +597,8 @@
     "sessionPublished": "Published",
     "sessionPageContent": "Page content",
     "sessionPageContentHelp": "Optional. The schedule, price, and sign-up form are always shown — these blocks add everything else.",
+    "showPreview": "Show preview",
+    "hidePreview": "Hide preview",
     "sessionLoadTemplate": "Load default template",
     "sessionLoadTemplateHelp": "Fills this tab with a starter page you can edit freely.",
     "sessionErrorNoDays": "Pick at least one day of the week.",

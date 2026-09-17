@@ -10,6 +10,7 @@ import { compressImage } from '@/lib/image-compress'
 import { FIELD_FULL, FIELD_LABEL, BUTTON_PRIMARY } from '@/lib/admin-styles'
 import type { Expedition } from '@/lib/types/admin'
 import { parseBlocks, type Block } from '@/lib/types/expedition-blocks'
+import { ExpeditionContent } from '@/components/public/ExpeditionContent'
 
 // Deep-clone blocks and reassign fresh IDs so the copied tab's React keys
 // don't collide with the source tab and the two tabs stay independent.
@@ -65,6 +66,7 @@ export function ExpeditionForm({ expedition, onSubmit, onCancel }: ExpeditionFor
   const [urlDraft, setUrlDraft] = useState('')
   const [translating, setTranslating] = useState(false)
   const [translateError, setTranslateError] = useState<string | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   /**
@@ -490,6 +492,31 @@ export function ExpeditionForm({ expedition, onSubmit, onCancel }: ExpeditionFor
         )}
         {detailsTab === 'en' && (
           <PageBuilder blocks={blocksEn} onChange={setBlocksEn} />
+        )}
+
+        {/* Live preview toggle */}
+        <button type="button" onClick={() => setShowPreview(!showPreview)}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" />
+            <circle cx="8" cy="8" r="2" />
+          </svg>
+          {showPreview ? t('hidePreview') : t('showPreview')}
+        </button>
+
+        {showPreview && (
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+              {detailsTab === 'es' ? 'Vista previa' : 'Preview'}
+            </p>
+            {(detailsTab === 'es' ? blocksEs : blocksEn).length > 0 ? (
+              <ExpeditionContent blocks={detailsTab === 'es' ? blocksEs : blocksEn} />
+            ) : (
+              <p className="text-sm text-gray-400 italic">
+                {detailsTab === 'es' ? 'Sin contenido aún' : 'No content yet'}
+              </p>
+            )}
+          </div>
         )}
       </div>
 

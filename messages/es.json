@@ -597,6 +597,8 @@
     "sessionPublished": "Publicada",
     "sessionPageContent": "Contenido de la página",
     "sessionPageContentHelp": "Opcional. El horario, el precio y el formulario siempre se muestran — estos bloques agregan todo lo demás.",
+    "showPreview": "Ver vista previa",
+    "hidePreview": "Ocultar vista previa",
     "sessionLoadTemplate": "Cargar plantilla por defecto",
     "sessionLoadTemplateHelp": "Llena esta pestaña con una página inicial que puedes editar libremente.",
     "sessionErrorNoDays": "Elige al menos un día de la semana.",
