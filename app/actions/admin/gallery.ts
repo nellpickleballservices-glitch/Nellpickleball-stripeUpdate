@@ -2,6 +2,7 @@
 
 import { requireAdmin } from './auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { deleteFromBlob, deleteManyFromBlob } from '@/lib/blob'
 import type { GalleryItem } from '@/lib/types/admin'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -105,6 +106,12 @@ export async function updateGalleryItemAction(
     return v && v.length > max ? v.slice(0, max) : v
   }
 
+  const { data: old } = await supabaseAdmin
+    .from('gallery_items')
+    .select('url, thumbnail_url')
+    .eq('id', itemId)
+    .single()
+
   const { error } = await supabaseAdmin
     .from('gallery_items')
     .update({
@@ -125,6 +132,12 @@ export async function updateGalleryItemAction(
     console.error('[gallery] updateGalleryItem error:', error.message)
     throw new Error('Operation failed')
   }
+
+  if (old) {
+    if (old.url && old.url !== url) void deleteFromBlob(old.url)
+    if (old.thumbnail_url && old.thumbnail_url !== thumbnail_url) void deleteFromBlob(old.thumbnail_url)
+  }
+
   return { success: true }
 }
 
@@ -141,10 +154,22 @@ export async function deleteGalleryItemAction(itemId: string): Promise<{ success
   await requireAdmin()
   if (!UUID_RE.test(itemId)) throw new Error('Invalid ID')
 
+  const { data: old } = await supabaseAdmin
+    .from('gallery_items')
+    .select('url, thumbnail_url')
+    .eq('id', itemId)
+    .single()
+
   const { error } = await supabaseAdmin.from('gallery_items').delete().eq('id', itemId)
   if (error) {
     console.error('[gallery] deleteGalleryItem error:', error.message)
     throw new Error('Operation failed')
   }
+
+  if (old) {
+    const urls = [old.url, old.thumbnail_url].filter(Boolean) as string[]
+    if (urls.length > 0) void deleteManyFromBlob(urls)
+  }
+
   return { success: true }
 }

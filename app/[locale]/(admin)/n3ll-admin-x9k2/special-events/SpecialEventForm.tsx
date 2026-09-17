@@ -77,6 +77,9 @@ export function SpecialEventForm({ event, onSubmit, onCancel }: SpecialEventForm
   const [heroSubtitleEs, setHeroSubtitleEs] = useState(event?.hero_subtitle_es ?? '')
   const [heroSubtitleEn, setHeroSubtitleEn] = useState(event?.hero_subtitle_en ?? '')
   const [heroImageUrl, setHeroImageUrl] = useState(event?.hero_image_url ?? '')
+  const [heroUploading, setHeroUploading] = useState(false)
+  const [heroUploadFeedback, setHeroUploadFeedback] = useState<string | null>(null)
+  const heroFileInputRef = useRef<HTMLInputElement>(null)
 
   const [images, setImages] = useState<string[]>(
     event?.image_urls?.length ? event.image_urls : event?.image_url ? [event.image_url] : []
@@ -157,6 +160,28 @@ export function SpecialEventForm({ event, onSubmit, onCancel }: SpecialEventForm
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  async function handleHeroFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setHeroUploading(true)
+    setHeroUploadFeedback(null)
+    try {
+      const optimized = await compressImage(file)
+      const fd = new FormData()
+      fd.append('file', optimized)
+      const { url } = await uploadSpecialEventImageAction(fd)
+      setHeroImageUrl(url)
+      setHeroUploadFeedback('Uploaded!')
+      setTimeout(() => setHeroUploadFeedback(null), 3000)
+    } catch {
+      setHeroUploadFeedback('Upload failed. Please try again.')
+      setTimeout(() => setHeroUploadFeedback(null), 4000)
+    } finally {
+      setHeroUploading(false)
+      if (heroFileInputRef.current) heroFileInputRef.current.value = ''
     }
   }
 
@@ -482,12 +507,46 @@ export function SpecialEventForm({ event, onSubmit, onCancel }: SpecialEventForm
           </div>
         </div>
 
-        <div>
+        <div className="space-y-3">
           <label className={labelCls}>{t('seHeroImage')}</label>
-          <input name="hero_image_url" type="text" value={heroImageUrl}
-            onChange={(e) => setHeroImageUrl(e.target.value)}
-            placeholder="https://..." className={inputCls} />
-          <p className="text-xs text-gray-500 mt-1">{t('seHeroImageHelp')}</p>
+          <input type="hidden" name="hero_image_url" value={heroImageUrl} />
+
+          <div className="flex flex-wrap items-center gap-3">
+            <input ref={heroFileInputRef} type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleHeroFileUpload} className="hidden" />
+            <button type="button" disabled={heroUploading}
+              onClick={() => heroFileInputRef.current?.click()} className={BUTTON_SOFT}>
+              {heroUploading ? t('uploading') : t('uploadFromDevice')}
+            </button>
+            {heroUploadFeedback && (
+              <span className={`text-xs ${heroUploadFeedback === 'Uploaded!' ? 'text-green-700' : 'text-red-600'}`}>
+                {heroUploadFeedback}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input type="text" value={heroImageUrl}
+              onChange={(e) => setHeroImageUrl(e.target.value)}
+              placeholder="https://... or upload above" className={inputCls} />
+            {heroImageUrl && (
+              <button type="button" onClick={() => setHeroImageUrl('')}
+                aria-label="Remove image"
+                className="shrink-0 grid place-items-center w-9 h-9 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-lg">
+                ×
+              </button>
+            )}
+          </div>
+
+          {heroImageUrl && (
+            <div className="relative rounded-lg overflow-hidden border border-gray-300 bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={heroImageUrl} alt="" className="w-full h-40 object-cover" />
+            </div>
+          )}
+
+          <p className="text-xs text-gray-500">{t('seHeroImageHelp')}</p>
         </div>
       </div>
 

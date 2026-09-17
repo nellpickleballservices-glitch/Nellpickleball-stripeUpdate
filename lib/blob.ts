@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob'
+import { put, del } from '@vercel/blob'
 
 const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const
 const ALLOWED_VIDEO_MIME = ['video/mp4', 'video/webm', 'video/quicktime'] as const
@@ -51,4 +51,32 @@ export async function uploadToBlob(file: File, opts: UploadOptions): Promise<str
   })
 
   return blob.url
+}
+
+/**
+ * Delete a blob by its public URL.
+ * Silently ignores errors (blob already deleted, invalid URL, etc.)
+ * so callers don't need to handle cleanup failures.
+ */
+export async function deleteFromBlob(url: string): Promise<void> {
+  if (!url) return
+  try {
+    await del(url)
+  } catch (err) {
+    console.warn('[blob] delete failed (non-fatal):', url, err instanceof Error ? err.message : err)
+  }
+}
+
+/**
+ * Delete multiple blobs by their public URLs.
+ * Filters out empty/falsy values and silently ignores errors.
+ */
+export async function deleteManyFromBlob(urls: string[]): Promise<void> {
+  const valid = urls.filter(Boolean)
+  if (valid.length === 0) return
+  try {
+    await del(valid)
+  } catch (err) {
+    console.warn('[blob] bulk delete failed (non-fatal):', err instanceof Error ? err.message : err)
+  }
 }

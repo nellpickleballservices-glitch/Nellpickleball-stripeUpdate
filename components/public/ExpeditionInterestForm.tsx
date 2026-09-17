@@ -6,9 +6,11 @@ import { createExpeditionInterestAction } from '@/app/actions/expedition-interes
 
 interface Props {
   expeditionId: string
+  /** Logged-in user info — null means not authenticated */
+  user: { name: string; email: string } | null
 }
 
-export function ExpeditionInterestForm({ expeditionId }: Props) {
+export function ExpeditionInterestForm({ expeditionId, user }: Props) {
   const t = useTranslations('ExpeditionInterest')
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
@@ -16,6 +18,7 @@ export function ExpeditionInterestForm({ expeditionId }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!user) return
     setSubmitting(true)
     setError(null)
 
@@ -27,12 +30,10 @@ export function ExpeditionInterestForm({ expeditionId }: Props) {
 
     const res = await createExpeditionInterestAction({
       expedition_id: expeditionId,
-      name: String(fd.get('name') ?? ''),
-      email: String(fd.get('email') ?? ''),
-      phone: (fd.get('phone') as string) || undefined,
+      name: user.name,
+      email: user.email,
       party_size: party,
       message: (fd.get('message') as string) || undefined,
-      hp: (fd.get('hp') as string) || undefined,
     })
 
     setSubmitting(false)
@@ -41,6 +42,23 @@ export function ExpeditionInterestForm({ expeditionId }: Props) {
     } else {
       setError(res.error)
     }
+  }
+
+  if (!user) {
+    return (
+      <div className="rounded-2xl border border-black/10 bg-white/80 backdrop-blur-sm p-6 sm:p-8 text-center shadow-sm">
+        <h3 className="font-bebas-neue text-2xl tracking-wide text-midnight mb-2">
+          {t('title')}
+        </h3>
+        <p className="text-slate text-sm mb-4">{t('loginRequired')}</p>
+        <a
+          href="/login"
+          className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-midnight text-white text-sm font-semibold hover:bg-midnight/90 transition-colors"
+        >
+          {t('loginButton')}
+        </a>
+      </div>
+    )
   }
 
   if (done) {
@@ -66,67 +84,25 @@ export function ExpeditionInterestForm({ expeditionId }: Props) {
         <p className="text-slate text-sm mt-1">{t('subtitle')}</p>
       </div>
 
-      {/* Honeypot — visually hidden from real users, harvested by bots. */}
-      <div className="hidden" aria-hidden="true">
-        <label>
-          Leave this field empty
-          <input type="text" name="hp" tabIndex={-1} autoComplete="off" />
-        </label>
+      {/* Logged-in user info */}
+      <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
+        <p className="text-sm text-midnight font-medium">{user.name}</p>
+        <p className="text-xs text-slate">{user.email}</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <label className="block">
-          <span className="block text-sm font-medium text-midnight mb-1">
-            {t('nameLabel')} <span className="text-red-500">*</span>
-          </span>
-          <input
-            name="name"
-            type="text"
-            required
-            maxLength={120}
-            disabled={submitting}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-turquoise/50 disabled:opacity-50"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-sm font-medium text-midnight mb-1">
-            {t('emailLabel')} <span className="text-red-500">*</span>
-          </span>
-          <input
-            name="email"
-            type="email"
-            required
-            maxLength={200}
-            disabled={submitting}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-turquoise/50 disabled:opacity-50"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-sm font-medium text-midnight mb-1">
-            {t('phoneLabel')}
-          </span>
-          <input
-            name="phone"
-            type="tel"
-            maxLength={40}
-            disabled={submitting}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-turquoise/50 disabled:opacity-50"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-sm font-medium text-midnight mb-1">
-            {t('partySizeLabel')}
-          </span>
-          <input
-            name="party_size"
-            type="number"
-            min={1}
-            max={200}
-            disabled={submitting}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-turquoise/50 disabled:opacity-50"
-          />
-        </label>
-      </div>
+      <label className="block">
+        <span className="block text-sm font-medium text-midnight mb-1">
+          {t('partySizeLabel')}
+        </span>
+        <input
+          name="party_size"
+          type="number"
+          min={1}
+          max={200}
+          disabled={submitting}
+          className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-turquoise/50 disabled:opacity-50"
+        />
+      </label>
 
       <label className="block">
         <span className="block text-sm font-medium text-midnight mb-1">

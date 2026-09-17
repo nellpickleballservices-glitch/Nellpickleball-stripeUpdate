@@ -3,12 +3,17 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { ScrollReveal } from '@/components/motion/ScrollReveal'
 import { ImageCarousel } from '@/components/public/ImageCarousel'
+import { SpecialEventSignupForm } from '@/components/public/SpecialEventSignupForm'
 import { getPublicSpecialEventAction } from '@/app/actions/special-events'
+import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
+import { isStripeConfigured } from '@/lib/stripe'
 import { formatSessionDate, formatSessionTimeRange, formatPrice } from '@/lib/sessions'
 import type { Metadata } from 'next'
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>
+  searchParams: Promise<{ canceled?: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -33,8 +38,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-export default async function SpecialEventDetailPage({ params }: PageProps) {
+export default async function SpecialEventDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params
+  const { canceled } = await searchParams
   const locale = await getLocale()
   const t = await getTranslations('SpecialEvents')
 
@@ -50,6 +56,22 @@ export default async function SpecialEventDetailPage({ params }: PageProps) {
 
   const dateLabel = formatSessionDate(event.event_date, locale)
   const timeLabel = formatSessionTimeRange(event.start_time, event.end_time, locale)
+
+  // Get logged-in user info for the signup form
+  let formUser: { name: string; email: string } | null = null
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single()
+      const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email.split('@')[0]
+      formUser = { name, email: user.email }
+    }
+  } catch { /* not logged in */ }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nellpickleball.com'
   const eventSchema = {
@@ -243,6 +265,28 @@ export default async function SpecialEventDetailPage({ params }: PageProps) {
             </div>
           )}
         </ScrollReveal>
+
+        {canceled && (
+          <div className="mb-8 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+            Your payment was canceled. You can try again below.
+          </div>
+        )}
+
+        <div className="mt-14 md:mt-16">
+          <ScrollReveal>
+            <SpecialEventSignupForm
+              eventId={event.id}
+              priceCents={event.price_cents}
+              effectivePriceCents={effectivePriceCents}
+              currency={event.currency}
+              allowStripe={event.allow_stripe}
+              allowCash={event.allow_cash}
+              isFull={isFull}
+              stripeAvailable={isStripeConfigured()}
+              user={formUser}
+            />
+          </ScrollReveal>
+        </div>
       </div>
     </main>
   )

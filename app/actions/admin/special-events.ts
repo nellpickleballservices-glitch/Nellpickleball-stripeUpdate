@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { requireAdmin } from './auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { deleteFromBlob, deleteManyFromBlob } from '@/lib/blob'
 import {
   SPECIAL_EVENTS_TAG,
   type SpecialEvent,
@@ -222,14 +223,34 @@ export async function updateSpecialEventAction(
   await requireAdmin()
   if (!UUID_RE.test(id)) throw new Error('Invalid ID')
 
+  // Fetch old images before update for cleanup
+  const { data: old } = await supabaseAdmin
+    .from('special_events')
+    .select('image_urls, hero_image_url')
+    .eq('id', id)
+    .single()
+
+  const parsed = parseSpecialEventForm(formData)
+
   const { error } = await supabaseAdmin
     .from('special_events')
-    .update(parseSpecialEventForm(formData))
+    .update(parsed)
     .eq('id', id)
 
   if (error) {
     console.error('[special-events] updateSpecialEvent error:', error.message)
     throw new Error('Operation failed')
+  }
+
+  // Clean up replaced images
+  if (old) {
+    const oldUrls = (old.image_urls as string[] | null) ?? []
+    const newUrls = (parsed.image_urls as string[] | null) ?? []
+    const removed = oldUrls.filter((u) => !newUrls.includes(u))
+    if (removed.length > 0) void deleteManyFromBlob(removed)
+
+    const oldHero = old.hero_image_url as string | null
+    if (oldHero && oldHero !== parsed.hero_image_url) void deleteFromBlob(oldHero)
   }
 
   invalidate(id)
@@ -240,11 +261,25 @@ export async function deleteSpecialEventAction(id: string): Promise<{ success: b
   await requireAdmin()
   if (!UUID_RE.test(id)) throw new Error('Invalid ID')
 
+  // Fetch images before delete for cleanup
+  const { data: old } = await supabaseAdmin
+    .from('special_events')
+    .select('image_urls, hero_image_url')
+    .eq('id', id)
+    .single()
+
   const { error } = await supabaseAdmin.from('special_events').delete().eq('id', id)
 
   if (error) {
     console.error('[special-events] deleteSpecialEvent error:', error.message)
     throw new Error('Operation failed')
+  }
+
+  // Clean up all blobs
+  if (old) {
+    const urls = (old.image_urls as string[] | null) ?? []
+    if (old.hero_image_url) urls.push(old.hero_image_url as string)
+    if (urls.length > 0) void deleteManyFromBlob(urls)
   }
 
   invalidate(id)

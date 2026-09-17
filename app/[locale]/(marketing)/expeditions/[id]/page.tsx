@@ -7,6 +7,8 @@ import { ExpeditionContent } from '@/components/public/ExpeditionContent'
 import { ExpeditionInterestForm } from '@/components/public/ExpeditionInterestForm'
 import { getExpeditionImages } from '@/lib/expeditions'
 import { getExpeditionByIdAction } from '@/app/actions/admin/expeditions'
+import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { parseBlocks } from '@/lib/types/expedition-blocks'
 import type { Metadata } from 'next'
 
@@ -54,6 +56,22 @@ export default async function ExpeditionDetailPage({ params }: PageProps) {
   const details = locale === 'en' ? expedition.details_en : expedition.details_es
   const blocks = parseBlocks(details)
   const images = getExpeditionImages(expedition)
+
+  // Get logged-in user info for the interest form
+  let formUser: { name: string; email: string } | null = null
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single()
+      const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email.split('@')[0]
+      formUser = { name, email: user.email }
+    }
+  } catch { /* not logged in */ }
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -162,7 +180,7 @@ export default async function ExpeditionDetailPage({ params }: PageProps) {
         {!expired && (
           <div className="mt-16 md:mt-20">
             <ScrollReveal>
-              <ExpeditionInterestForm expeditionId={expedition.id} />
+              <ExpeditionInterestForm expeditionId={expedition.id} user={formUser} />
             </ScrollReveal>
           </div>
         )}

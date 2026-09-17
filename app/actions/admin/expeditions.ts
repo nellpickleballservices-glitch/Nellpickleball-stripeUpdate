@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { requireAdmin } from './auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { deleteManyFromBlob } from '@/lib/blob'
 import type { Expedition } from '@/lib/types/admin'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -192,6 +193,12 @@ export async function updateExpeditionAction(
   await requireAdmin()
   if (!UUID_RE.test(id)) throw new Error('Invalid ID')
 
+  const { data: old } = await supabaseAdmin
+    .from('expeditions')
+    .select('image_urls')
+    .eq('id', id)
+    .single()
+
   const payload = parseExpeditionForm(formData)
 
   const { error } = await supabaseAdmin
@@ -204,6 +211,13 @@ export async function updateExpeditionAction(
     throw new Error('Operation failed')
   }
 
+  if (old) {
+    const oldUrls = (old.image_urls as string[] | null) ?? []
+    const newUrls = (payload.image_urls as string[] | null) ?? []
+    const removed = oldUrls.filter((u) => !newUrls.includes(u))
+    if (removed.length > 0) void deleteManyFromBlob(removed)
+  }
+
   revalidateTag(EXPEDITIONS_TAG, 'max')
   revalidatePath('/')
   revalidatePath(`/expeditions/${id}`)
@@ -214,11 +228,22 @@ export async function deleteExpeditionAction(id: string): Promise<{ success: boo
   await requireAdmin()
   if (!UUID_RE.test(id)) throw new Error('Invalid ID')
 
+  const { data: old } = await supabaseAdmin
+    .from('expeditions')
+    .select('image_urls')
+    .eq('id', id)
+    .single()
+
   const { error } = await supabaseAdmin.from('expeditions').delete().eq('id', id)
 
   if (error) {
     console.error('[expeditions] deleteExpedition error:', error.message)
     throw new Error('Operation failed')
+  }
+
+  if (old) {
+    const urls = (old.image_urls as string[] | null) ?? []
+    if (urls.length > 0) void deleteManyFromBlob(urls)
   }
 
   revalidateTag(EXPEDITIONS_TAG, 'max')

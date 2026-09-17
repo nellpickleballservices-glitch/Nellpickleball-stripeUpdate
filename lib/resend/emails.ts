@@ -218,6 +218,75 @@ export async function sendSessionSignupEmails(payload: SessionSignupEmail): Prom
   }
 }
 
+export interface SpecialEventSignupEmail {
+  eventTitle: string
+  eventDate: string
+  startTime: string
+  endTime: string
+  name: string
+  email: string
+  paymentMethod: 'stripe' | 'cash'
+  amountCents: number
+  currency: string
+}
+
+export async function sendSpecialEventSignupEmails(payload: SpecialEventSignupEmail): Promise<void> {
+  const when = `${payload.eventDate} · ${payload.startTime.slice(0, 5)}–${payload.endTime.slice(0, 5)}`
+  const paid = payload.paymentMethod === 'stripe'
+  const amount = formatMoney(payload.amountCents, payload.currency)
+
+  try {
+    const lines = [
+      `Hi ${payload.name},`,
+      '',
+      `You're signed up for ${payload.eventTitle}.`,
+      '',
+      `When:   ${when}`,
+      paid
+        ? `Paid:   ${amount} — payment received, you're all set.`
+        : `To pay: ${amount} in cash at the door. Please arrive a few minutes early.`,
+      '',
+      'See you there!',
+      '— NELL Pickleball Club',
+    ]
+
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: payload.email,
+      subject: `You're signed up — ${payload.eventTitle}`,
+      text: lines.join('\n'),
+    })
+  } catch (error) {
+    console.error('Failed to send special event confirmation email:', error)
+  }
+
+  const to = process.env.CLIENT_NOTIFICATION_EMAIL
+  if (!to) return
+
+  try {
+    const lines = [
+      `New sign-up for: ${payload.eventTitle}`,
+      '',
+      `When:     ${when}`,
+      `Name:     ${payload.name}`,
+      `Email:    ${payload.email}`,
+      `Payment:  ${paid ? `${amount} paid online` : `${amount} CASH — collect at the door`}`,
+      '',
+      '— Sent automatically by the NELL Pickleball site.',
+    ]
+
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      replyTo: payload.email,
+      subject: `${paid ? 'Paid' : 'Cash'} sign-up: ${payload.eventTitle} (${payload.eventDate})`,
+      text: lines.join('\n'),
+    })
+  } catch (error) {
+    console.error('Failed to send special event operator email:', error)
+  }
+}
+
 export interface ContactMessageEmail {
   firstName: string
   lastName: string

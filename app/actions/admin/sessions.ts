@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { requireAdmin } from './auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { deleteManyFromBlob } from '@/lib/blob'
 import { SESSIONS_TAG } from '@/lib/sessions'
 import type {
   PlaySession,
@@ -218,14 +219,29 @@ export async function updateSessionAction(
   await requireAdmin()
   if (!UUID_RE.test(id)) throw new Error('Invalid ID')
 
+  const { data: old } = await supabaseAdmin
+    .from('play_sessions')
+    .select('image_urls')
+    .eq('id', id)
+    .single()
+
+  const parsed = parseSessionForm(formData)
+
   const { error } = await supabaseAdmin
     .from('play_sessions')
-    .update(parseSessionForm(formData))
+    .update(parsed)
     .eq('id', id)
 
   if (error) {
     console.error('[sessions] updateSession error:', error.message)
     throw new Error('Operation failed')
+  }
+
+  if (old) {
+    const oldUrls = (old.image_urls as string[] | null) ?? []
+    const newUrls = (parsed.image_urls as string[] | null) ?? []
+    const removed = oldUrls.filter((u) => !newUrls.includes(u))
+    if (removed.length > 0) void deleteManyFromBlob(removed)
   }
 
   invalidate(id)
@@ -236,11 +252,22 @@ export async function deleteSessionAction(id: string): Promise<{ success: boolea
   await requireAdmin()
   if (!UUID_RE.test(id)) throw new Error('Invalid ID')
 
+  const { data: old } = await supabaseAdmin
+    .from('play_sessions')
+    .select('image_urls')
+    .eq('id', id)
+    .single()
+
   const { error } = await supabaseAdmin.from('play_sessions').delete().eq('id', id)
 
   if (error) {
     console.error('[sessions] deleteSession error:', error.message)
     throw new Error('Operation failed')
+  }
+
+  if (old) {
+    const urls = (old.image_urls as string[] | null) ?? []
+    if (urls.length > 0) void deleteManyFromBlob(urls)
   }
 
   invalidate(id)

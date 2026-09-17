@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { useTranslations } from 'next-intl'
 import { ContentPreview } from './ContentPreview'
@@ -13,8 +13,14 @@ import {
   deleteHeroLocationAction,
   getTouristSurchargeAction,
   updateTouristSurchargeAction,
+  getSpecialEventsBannerAction,
+  updateSpecialEventsBannerAction,
+  uploadSpecialEventImageAction,
 } from '@/app/actions/admin'
+import type { SpecialEventsBannerConfig } from '@/app/actions/admin'
 import type { ContentBlock } from '@/lib/types/admin'
+import { compressImage } from '@/lib/image-compress'
+import { BUTTON_SOFT } from '@/lib/admin-styles'
 
 interface HeroLocation {
   id: string
@@ -51,7 +57,7 @@ function formatBlockKey(key: string): string {
   return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
 }
 
-type Section = 'blocks' | 'heroLocations' | 'settings'
+type Section = 'blocks' | 'heroLocations' | 'seBanner' | 'settings'
 
 export default function AdminCmsPage() {
   const t = useTranslations('Admin')
@@ -75,6 +81,17 @@ export default function AdminCmsPage() {
   const [addingLocation, setAddingLocation] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
 
+  // Special events banner state
+  const [banner, setBanner] = useState<SpecialEventsBannerConfig>({
+    title_es: '', title_en: '', subtitle_es: '', subtitle_en: '', image_url: '',
+  })
+  const [bannerSaving, setBannerSaving] = useState(false)
+  const [bannerSaved, setBannerSaved] = useState(false)
+  const [bannerError, setBannerError] = useState<string | null>(null)
+  const [bannerUploading, setBannerUploading] = useState(false)
+  const [bannerUploadFeedback, setBannerUploadFeedback] = useState<string | null>(null)
+  const bannerFileRef = useRef<HTMLInputElement>(null)
+
   // Settings state
   const [surcharge, setSurcharge] = useState('')
   const [surchargeLoading, setSurchargeLoading] = useState(false)
@@ -85,6 +102,7 @@ export default function AdminCmsPage() {
     loadBlocks()
     loadHeroLocations()
     loadSettings()
+    loadBanner()
   }, [])
 
   async function loadHeroLocations() {
@@ -120,6 +138,52 @@ export default function AdminCmsPage() {
       await loadHeroLocations()
     } catch (err) {
       console.error('Failed to delete hero location:', err)
+    }
+  }
+
+  async function loadBanner() {
+    try {
+      const data = await getSpecialEventsBannerAction()
+      setBanner(data)
+    } catch (err) {
+      console.error('Failed to load banner:', err)
+    }
+  }
+
+  async function handleSaveBanner(e: React.FormEvent) {
+    e.preventDefault()
+    setBannerSaving(true)
+    setBannerError(null)
+    try {
+      await updateSpecialEventsBannerAction(banner)
+      setBannerSaved(true)
+      setTimeout(() => setBannerSaved(false), 2000)
+    } catch (err) {
+      setBannerError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setBannerSaving(false)
+    }
+  }
+
+  async function handleBannerImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBannerUploading(true)
+    setBannerUploadFeedback(null)
+    try {
+      const optimized = await compressImage(file)
+      const fd = new FormData()
+      fd.append('file', optimized)
+      const { url } = await uploadSpecialEventImageAction(fd)
+      setBanner((prev) => ({ ...prev, image_url: url }))
+      setBannerUploadFeedback('Uploaded!')
+      setTimeout(() => setBannerUploadFeedback(null), 3000)
+    } catch {
+      setBannerUploadFeedback('Upload failed. Please try again.')
+      setTimeout(() => setBannerUploadFeedback(null), 4000)
+    } finally {
+      setBannerUploading(false)
+      if (bannerFileRef.current) bannerFileRef.current.value = ''
     }
   }
 
@@ -237,6 +301,16 @@ export default function AdminCmsPage() {
           {t('heroLocations')}
         </button>
         <button
+          onClick={() => setSection('seBanner')}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            section === 'seBanner'
+              ? 'bg-midnight text-white'
+              : 'bg-white text-midnight border border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          {t('seBanner')}
+        </button>
+        <button
           onClick={() => setSection('settings')}
           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
             section === 'settings'
@@ -248,7 +322,95 @@ export default function AdminCmsPage() {
         </button>
       </div>
 
-      {section === 'settings' ? (
+      {section === 'seBanner' ? (
+        <div className="space-y-4">
+          <p className="text-xs text-gray-500">{t('seBannerHelp')}</p>
+          <form onSubmit={handleSaveBanner} className="bg-white border border-gray-200 rounded-lg p-5 space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-midnight mb-1">{t('seBannerTitleEs')}</label>
+                <input type="text" value={banner.title_es}
+                  onChange={(e) => setBanner((p) => ({ ...p, title_es: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-midnight mb-1">{t('seBannerTitleEn')}</label>
+                <input type="text" value={banner.title_en}
+                  onChange={(e) => setBanner((p) => ({ ...p, title_en: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-midnight mb-1">{t('seBannerSubtitleEs')}</label>
+                <input type="text" value={banner.subtitle_es}
+                  onChange={(e) => setBanner((p) => ({ ...p, subtitle_es: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-midnight mb-1">{t('seBannerSubtitleEn')}</label>
+                <input type="text" value={banner.subtitle_en}
+                  onChange={(e) => setBanner((p) => ({ ...p, subtitle_en: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+
+            {/* Banner image upload */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-midnight">{t('seBannerImage')}</label>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <input ref={bannerFileRef} type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleBannerImageUpload} className="hidden" />
+                <button type="button" disabled={bannerUploading}
+                  onClick={() => bannerFileRef.current?.click()} className={BUTTON_SOFT}>
+                  {bannerUploading ? t('uploading') : t('uploadFromDevice')}
+                </button>
+                {bannerUploadFeedback && (
+                  <span className={`text-xs ${bannerUploadFeedback === 'Uploaded!' ? 'text-green-700' : 'text-red-600'}`}>
+                    {bannerUploadFeedback}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input type="text" value={banner.image_url}
+                  onChange={(e) => setBanner((p) => ({ ...p, image_url: e.target.value }))}
+                  placeholder="https://... or upload above"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {banner.image_url && (
+                  <button type="button" onClick={() => setBanner((p) => ({ ...p, image_url: '' }))}
+                    aria-label="Remove image"
+                    className="shrink-0 grid place-items-center w-9 h-9 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors text-lg">
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {banner.image_url && (
+                <div className="relative rounded-lg overflow-hidden border border-gray-300 bg-white">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={banner.image_url} alt="" className="w-full h-40 object-cover" />
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500">{t('seBannerImageHelp')}</p>
+            </div>
+
+            {bannerError && <p className="text-red-600 text-sm">{bannerError}</p>}
+
+            <div className="flex items-center gap-3">
+              <button type="submit" disabled={bannerSaving}
+                className="px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                {bannerSaving ? t('saving') : t('save')}
+              </button>
+              {bannerSaved && <span className="text-green-700 text-sm">{t('seBannerSaved')}</span>}
+            </div>
+          </form>
+        </div>
+      ) : section === 'settings' ? (
         <div className="space-y-4">
           <form onSubmit={handleSaveSurcharge} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
             <div>

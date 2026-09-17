@@ -10,7 +10,8 @@ import { getStripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { revalidateTag } from 'next/cache'
 import { SESSIONS_TAG } from '@/lib/sessions'
-import { sendSessionSignupEmails } from '@/lib/resend/emails'
+import { SPECIAL_EVENTS_TAG } from '@/lib/types/special-events'
+import { sendSessionSignupEmails, sendSpecialEventSignupEmails } from '@/lib/resend/emails'
 
 // Signature verification needs the byte-exact body, so this must run on Node
 // with no caching or body transformation in front of it.
@@ -44,15 +45,27 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCompleted(event.data.object)
+      case 'checkout.session.completed': {
+        const co = event.data.object
+        if (co.metadata?.signup_type === 'special_event') {
+          await handleSpecialEventCompleted(co)
+        } else {
+          await handleCompleted(co)
+        }
         break
+      }
 
       // The payer abandoned checkout, or our own hold window elapsed. Either
       // way the spot goes back to the pool.
-      case 'checkout.session.expired':
-        await handleExpired(event.data.object)
+      case 'checkout.session.expired': {
+        const co = event.data.object
+        if (co.metadata?.signup_type === 'special_event') {
+          await handleSpecialEventExpired(co)
+        } else {
+          await handleExpired(co)
+        }
         break
+      }
 
       default:
         // Unhandled event types are acknowledged so Stripe stops retrying.
@@ -141,4 +154,75 @@ async function handleExpired(checkout: Stripe.Checkout.Session): Promise<void> {
   if (error) throw new Error(`releasing expired hold failed: ${error.message}`)
 
   revalidateTag(SESSIONS_TAG, { expire: 0 })
+}
+
+// ── Special Event handlers ──
+
+async function handleSpecialEventCompleted(checkout: Stripe.Checkout.Session): Promise<void> {
+  const signupId = checkout.metadata?.signup_id
+  if (!signupId) {
+    console.error('[session-webhook] special event completed with no signup_id')
+    return
+  }
+
+  if (checkout.payment_status !== 'paid') return
+
+  const paymentIntent =
+    typeof checkout.payment_intent === 'string'
+      ? checkout.payment_intent
+      : checkout.payment_intent?.id ?? null
+
+  const { data, error } = await supabaseAdmin
+    .from('special_event_signups')
+    .update({
+      payment_status: 'paid',
+      stripe_payment_intent: paymentIntent,
+      hold_expires_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', signupId)
+    .eq('payment_status', 'pending')
+    .select('id, name, email, special_events(title_en, title_es, event_date, start_time, end_time), amount_cents, currency')
+
+  if (error) throw new Error(`marking special event paid failed: ${error.message}`)
+
+  const row = data?.[0]
+  if (!row) return
+
+  revalidateTag(SPECIAL_EVENTS_TAG, { expire: 0 })
+
+  const ev = row.special_events as unknown as
+    | { title_en: string; title_es: string; event_date: string; start_time: string; end_time: string }
+    | null
+
+  void sendSpecialEventSignupEmails({
+    eventTitle: ev?.title_en ?? ev?.title_es ?? 'Special Event',
+    eventDate: ev?.event_date ?? '',
+    startTime: ev?.start_time ?? '',
+    endTime: ev?.end_time ?? '',
+    name: row.name,
+    email: row.email,
+    paymentMethod: 'stripe',
+    amountCents: row.amount_cents,
+    currency: row.currency,
+  })
+}
+
+async function handleSpecialEventExpired(checkout: Stripe.Checkout.Session): Promise<void> {
+  const signupId = checkout.metadata?.signup_id
+  if (!signupId) return
+
+  const { error } = await supabaseAdmin
+    .from('special_event_signups')
+    .update({
+      payment_status: 'cancelled',
+      hold_expires_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', signupId)
+    .eq('payment_status', 'pending')
+
+  if (error) throw new Error(`releasing special event expired hold failed: ${error.message}`)
+
+  revalidateTag(SPECIAL_EVENTS_TAG, { expire: 0 })
 }

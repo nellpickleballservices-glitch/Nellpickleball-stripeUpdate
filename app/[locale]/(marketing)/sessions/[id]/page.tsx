@@ -8,6 +8,8 @@ import { SessionSignupForm } from '@/components/public/SessionSignupForm'
 import { getPublicSessionAction } from '@/app/actions/sessions'
 import { parseBlocks } from '@/lib/types/expedition-blocks'
 import { isStripeConfigured } from '@/lib/stripe'
+import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import {
   getSessionImages,
   formatSessionTimeRange,
@@ -63,6 +65,22 @@ export default async function SessionDetailPage({ params, searchParams }: PagePr
   const timeLabel = formatSessionTimeRange(session.start_time, session.end_time, locale)
   const priceLabel =
     session.price_cents === 0 ? t('free') : formatPrice(session.price_cents, session.currency, locale)
+
+  // Get logged-in user info for the signup form
+  let formUser: { name: string; email: string } | null = null
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user?.email) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', user.id)
+        .single()
+      const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email.split('@')[0]
+      formUser = { name, email: user.email }
+    }
+  } catch { /* not logged in */ }
 
   // Schema.org Event markup for the next upcoming date — makes the session
   // eligible for Google's Events rich result.
@@ -192,6 +210,7 @@ export default async function SessionDetailPage({ params, searchParams }: PagePr
               occurrences={occurrences}
               initialDate={dateParam}
               stripeAvailable={isStripeConfigured()}
+              user={formUser}
             />
           </ScrollReveal>
         </div>

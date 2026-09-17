@@ -11,6 +11,7 @@ export { getSessionsAction, createSessionAction, updateSessionAction, deleteSess
 export { getSpecialEventsAction, createSpecialEventAction, updateSpecialEventAction, deleteSpecialEventAction, getSpecialEventSignupsAction, updateSpecialEventSignupStatusAction, deleteSpecialEventSignupAction, uploadSpecialEventImageAction } from './admin/special-events'
 export { getExpeditionInterestsAction, updateExpeditionInterestStatusAction, deleteExpeditionInterestAction } from './admin/expedition-interests'
 export type { AdminExpeditionInterest, InterestStatus } from './admin/expedition-interests'
-export { getTouristSurchargeAction, updateTouristSurchargeAction } from './admin/settings'
+export { getTouristSurchargeAction, updateTouristSurchargeAction, getSpecialEventsBannerAction, updateSpecialEventsBannerAction } from './admin/settings'
+export type { SpecialEventsBannerConfig } from './admin/settings'
 export { translateExpeditionContentAction } from './admin/translate'
 export type { TranslatePayload, TranslateResult } from './admin/translate'

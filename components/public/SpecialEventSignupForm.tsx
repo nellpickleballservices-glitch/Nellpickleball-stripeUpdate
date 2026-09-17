@@ -2,55 +2,57 @@
 
 import { useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { createSessionSignupAction } from '@/app/actions/sessions'
-import { formatSessionDate, formatPrice } from '@/lib/sessions'
-import type { PaymentMethod, PlaySession, SessionOccurrence } from '@/lib/types/sessions'
+import { createSpecialEventSignupAction } from '@/app/actions/special-event-signup'
+import { formatPrice } from '@/lib/sessions'
+import type { EventCurrency } from '@/lib/types/special-events'
+
+type PaymentMethod = 'stripe' | 'cash'
 
 interface Props {
-  session: PlaySession
-  occurrences: SessionOccurrence[]
-  /** Date pre-selected from the card the visitor clicked. */
-  initialDate?: string
+  eventId: string
+  priceCents: number
+  effectivePriceCents: number
+  currency: EventCurrency
+  allowStripe: boolean
+  allowCash: boolean
+  isFull: boolean
   stripeAvailable: boolean
   /** Logged-in user info — null means not authenticated */
   user: { name: string; email: string } | null
 }
 
-export function SessionSignupForm({ session, occurrences, initialDate, stripeAvailable, user }: Props) {
-  const t = useTranslations('Sessions')
+export function SpecialEventSignupForm({
+  eventId,
+  priceCents,
+  effectivePriceCents,
+  currency,
+  allowStripe,
+  allowCash,
+  isFull,
+  stripeAvailable,
+  user,
+}: Props) {
+  const t = useTranslations('SpecialEvents')
   const locale = useLocale()
 
-  const selectable = occurrences.filter((o) => !o.isFull)
-  const defaultDate =
-    initialDate && selectable.some((o) => o.date === initialDate)
-      ? initialDate
-      : selectable[0]?.date ?? ''
+  const isFree = effectivePriceCents === 0
+  const showStripe = allowStripe && stripeAvailable && !isFree
+  const showCash = allowCash || isFree
 
-  const [date, setDate] = useState(defaultDate)
   const [method, setMethod] = useState<PaymentMethod>(
-    session.allow_stripe && stripeAvailable ? 'stripe' : 'cash'
+    showStripe ? 'stripe' : 'cash'
   )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
 
-  const isFree = session.price_cents === 0
-  const showStripe = session.allow_stripe && stripeAvailable && !isFree
-  const showCash = session.allow_cash || isFree
-  const selected = occurrences.find((o) => o.date === date)
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!user) return
     setSubmitting(true)
     setError(null)
 
-    const res = await createSessionSignupAction({
-      session_id: session.id,
-      session_date: date,
-      name: user.name,
-      email: user.email,
-      // A free session never goes through Stripe, whatever the radio says.
+    const res = await createSpecialEventSignupAction({
+      event_id: eventId,
       payment_method: isFree ? 'cash' : method,
     })
 
@@ -61,8 +63,6 @@ export function SessionSignupForm({ session, occurrences, initialDate, stripeAva
     }
 
     if (res.kind === 'stripe') {
-      // Hand off to Stripe. Deliberately not resetting `submitting` — the page
-      // is navigating away, and re-enabling the button invites a double charge.
       window.location.href = res.checkoutUrl
       return
     }
@@ -102,19 +102,16 @@ export function SessionSignupForm({ session, occurrences, initialDate, stripeAva
     )
   }
 
-  if (selectable.length === 0) {
+  if (isFull) {
     return (
       <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 sm:p-8 text-center">
         <h3 className="font-bebas-neue text-2xl tracking-wide text-midnight mb-2">
-          {t('allFullTitle')}
+          {t('soldOut')}
         </h3>
-        <p className="text-slate text-base">{t('allFullBody')}</p>
+        <p className="text-slate text-base">{t('soldOutBody')}</p>
       </div>
     )
   }
-
-  const inputCls =
-    'w-full px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-turquoise/50 disabled:opacity-50'
 
   return (
     <form
@@ -126,9 +123,9 @@ export function SessionSignupForm({ session, occurrences, initialDate, stripeAva
           {t('signUpTitle')}
         </h3>
         <p className="text-slate text-sm mt-1">
-          {isFree ? t('free') : formatPrice(session.price_cents, session.currency, locale)}
+          {isFree ? t('free') : formatPrice(effectivePriceCents, currency, locale)}
           {' · '}
-          {t('perPlayer')}
+          {t('perPerson')}
         </p>
       </div>
 
@@ -138,35 +135,7 @@ export function SessionSignupForm({ session, occurrences, initialDate, stripeAva
         <p className="text-xs text-slate">{user.email}</p>
       </div>
 
-      {/* Date — sold-out dates stay visible but unselectable so people can see
-          the session runs on that day and simply came too late. */}
-      <label className="block">
-        <span className="block text-sm font-medium text-midnight mb-1">
-          {t('chooseDate')} <span className="text-red-500">*</span>
-        </span>
-        <select
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          disabled={submitting}
-          className={inputCls}
-          required
-        >
-          {occurrences.map((o) => (
-            <option key={o.date} value={o.date} disabled={o.isFull}>
-              {formatSessionDate(o.date, locale)}
-              {o.isFull ? ` — ${t('soldOut')}` : ` — ${t('spotsLeft', { count: o.spotsLeft })}`}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {selected && !selected.isFull && selected.spotsLeft <= 3 && (
-        <p className="text-sm text-orange-700 font-medium">
-          {t('almostFull', { count: selected.spotsLeft })}
-        </p>
-      )}
-
-      {/* Payment method — hidden entirely when only one path is possible. */}
+      {/* Payment method — hidden when only one path */}
       {!isFree && showStripe && showCash && (
         <fieldset className="space-y-2">
           <legend className="block text-sm font-medium text-midnight mb-1">{t('paymentLabel')}</legend>
@@ -199,7 +168,7 @@ export function SessionSignupForm({ session, occurrences, initialDate, stripeAva
         <p className="text-xs text-slate/70">{t('privacyNote')}</p>
         <button
           type="submit"
-          disabled={submitting || !date}
+          disabled={submitting}
           className="inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-midnight text-white text-sm font-semibold hover:bg-midnight/90 disabled:opacity-50 transition-colors"
         >
           {submitting
