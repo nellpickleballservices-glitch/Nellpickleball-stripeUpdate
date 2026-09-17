@@ -13,7 +13,10 @@
     "events": "Events",
     "contact": "Contact",
     "gallery": "Gallery",
-    "sessions": "Play Sessions"
+    "sessions": "Play Sessions",
+    "memberSince": "Member since",
+    "activeSessions": "Upcoming Sessions",
+    "noActiveSessions": "No upcoming sessions"
   },
   "Auth": {
     "signup": {
@@ -836,6 +839,7 @@
     "earlyBird": "Early bird",
     "promoEnds": "Promo ends {date}",
     "payOnline": "Pay online",
-    "payCash": "Pay at door"
+    "payCash": "Pay at door",
+    "backToHome": "Back"
   }
 }

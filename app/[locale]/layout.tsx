@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Bebas_Neue, Poppins, Bungee } from 'next/font/google'
+import { Bebas_Neue, Poppins, Bungee, Rubik_Dirt } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { Analytics } from '@vercel/analytics/next'
@@ -29,6 +29,12 @@ const bungee = Bungee({
   display: 'swap',
 })
 
+const rubikDirt = Rubik_Dirt({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-rubik-dirt',
+  display: 'swap',
+})
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nellpickleball.com'
 
@@ -99,7 +105,7 @@ export default async function RootLayout({
   const messages = await getMessages()
 
   return (
-    <html lang={locale} className={`${bebasNeue.variable} ${poppins.variable} ${bungee.variable}`}>
+    <html lang={locale} className={`${bebasNeue.variable} ${poppins.variable} ${bungee.variable} ${rubikDirt.variable}`}>
       <body className="font-poppins">
         <script
           type="application/ld+json"

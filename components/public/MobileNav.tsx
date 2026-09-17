@@ -7,13 +7,15 @@ import { AnimatePresence, m } from 'motion/react'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { logoutAction } from '@/app/actions/auth'
 import type { User } from '@supabase/supabase-js'
+import type { UserProfile } from '@/components/Navbar'
 
 interface MobileNavProps {
   user: User | null
   isAdmin: boolean
+  profile: UserProfile | null
 }
 
-export function MobileNav({ user, isAdmin }: MobileNavProps) {
+export function MobileNav({ user, isAdmin, profile }: MobileNavProps) {
   const [open, setOpen] = useState(false)
   const [navBottom, setNavBottom] = useState(0)
   const t = useTranslations('Nav')
@@ -169,6 +171,33 @@ export function MobileNav({ user, isAdmin }: MobileNavProps) {
                   >
                     {t('signup')}
                   </Link>
+                </div>
+              )}
+
+              {user && profile && (
+                <div className="mb-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-6 h-6 rounded-full bg-lime text-midnight flex items-center justify-center text-xs font-bold uppercase">
+                      {profile.firstName.charAt(0)}
+                    </span>
+                    <span className="text-offwhite text-sm font-semibold">{profile.firstName}</span>
+                  </div>
+                  <p className="text-white/50 text-xs mb-2">
+                    {t('memberSince')} {new Date(profile.memberSince).toLocaleString('default', { month: 'short' })} {new Date(profile.memberSince).getFullYear()}
+                  </p>
+                  {profile.activeSessions.length > 0 && (
+                    <div className="mb-2">
+                      <p className="text-white/70 text-xs font-semibold uppercase tracking-wide mb-1">{t('activeSessions')}</p>
+                      <ul className="space-y-1">
+                        {profile.activeSessions.slice(0, 3).map((s, i) => (
+                          <li key={i} className="flex justify-between text-xs">
+                            <span className="text-offwhite truncate mr-2">{s.title}</span>
+                            <span className="text-lime font-mono whitespace-nowrap">{s.startTime}–{s.endTime}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 

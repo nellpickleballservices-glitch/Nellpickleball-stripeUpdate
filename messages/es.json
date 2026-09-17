@@ -13,7 +13,10 @@
     "events": "Eventos",
     "contact": "Contacto",
     "gallery": "Galería",
-    "sessions": "Sesiones"
+    "sessions": "Sesiones",
+    "memberSince": "Miembro desde",
+    "activeSessions": "Proximas Sesiones",
+    "noActiveSessions": "No hay sesiones proximas"
   },
   "Auth": {
     "signup": {
@@ -836,6 +839,7 @@
     "earlyBird": "Early bird",
     "promoEnds": "Promoción termina {date}",
     "payOnline": "Pagar en línea",
-    "payCash": "Pagar en puerta"
+    "payCash": "Pagar en puerta",
+    "backToHome": "Volver"
   }
 }

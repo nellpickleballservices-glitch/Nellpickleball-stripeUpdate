@@ -97,11 +97,11 @@ export async function SessionsSection() {
           {visible.length === 0 ? (
             // Nothing published (or every date has expired) — say so plainly
             // rather than rendering an empty grid.
-            <div className="max-w-2xl mx-auto text-center rounded-2xl border border-lime/30 bg-lime/5 px-6 py-12 sm:py-16">
-              <p className="font-bebas-neue text-4xl sm:text-5xl tracking-widest text-lime mb-3">
+            <div className="max-w-2xl mx-auto text-center rounded-2xl bg-white px-6 py-12 sm:py-16" style={{ border: '1.5px solid black' }}>
+              <p className="font-bebas-neue text-4xl sm:text-5xl tracking-widest mb-3" style={{ color: '#556B2F' }}>
                 {t('comingSoonTitle')}
               </p>
-              <p className="text-white/80 text-base max-w-md mx-auto">{t('comingSoonBody')}</p>
+              <p className="text-black/70 text-base max-w-md mx-auto">{t('comingSoonBody')}</p>
             </div>
           ) : (
             <>

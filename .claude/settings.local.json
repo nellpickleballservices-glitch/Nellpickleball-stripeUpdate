@@ -51,7 +51,13 @@
       "Bash(claude mcp:*)",
       "Bash(git diff:*)",
       "Bash(node:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git commit:*)",
+      "Bash(ls C:/Users/joseu/Desktop/simplenellpickleballsite/i18n*)",
+      "Bash(ls C:/Users/joseu/Desktop/simplenellpickleballsite/src/middleware*)",
+      "Bash(ls C:/Users/joseu/Desktop/simplenellpickleballsite/*.ts C:/Users/joseu/Desktop/simplenellpickleballsite/*.js)",
+      "Bash(ls -la /c/Users/joseu/Desktop/simplenellpickleballsite/app/[locale]/\\\\\\(marketing\\\\\\)/)",
+      "Bash(ls:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

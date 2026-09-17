@@ -102,7 +102,7 @@ async function HomePage({ searchParams }: HomePageProps) {
             <div className="max-w-2xl">
               {/* Main headline */}
               <ScrollReveal delay={0.15}>
-                <h1 className="font-bebas-neue text-[clamp(3rem,9vw,6rem)] leading-[1] tracking-widest text-offwhite mb-5 sm:mb-3 py-1 drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)]">
+                <h1 className="font-rubik-dirt text-[clamp(3rem,9vw,6rem)] leading-[1] tracking-widest text-offwhite mb-5 sm:mb-3 py-1 drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)]">
                   {t('heroHeadline')}
                 </h1>
               </ScrollReveal>

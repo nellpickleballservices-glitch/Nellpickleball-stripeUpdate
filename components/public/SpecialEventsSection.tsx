@@ -31,15 +31,11 @@ export async function SpecialEventsSection() {
       <section id="special-events" className="relative pt-0 pb-28 sm:pb-32 bg-midnight overflow-hidden">
 
         {/* ── Hero/banner ── */}
-        <div className="relative w-full py-14 sm:py-16 lg:py-20 overflow-hidden"
-          style={{
-            background: heroImage
-              ? undefined
-              : 'linear-gradient(135deg, #7C3AED 0%, #A855F7 30%, #F59E0B 70%, #EF4444 100%)',
-          }}
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ aspectRatio: '16 / 5' }}
         >
-          {/* Background image if set */}
-          {heroImage && (
+          {heroImage ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -47,30 +43,16 @@ export async function SpecialEventsSection() {
                 alt=""
                 className="absolute inset-0 w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-900/80 via-purple-800/60 to-amber-900/70" />
+              <div className="absolute inset-0 bg-black/30" />
             </>
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, #22c55e, #3b82f6)' }}
+            />
           )}
 
-          {/* Sparkle/star pattern overlay */}
-          <svg aria-hidden className="pointer-events-none absolute inset-0 w-full h-full" preserveAspectRatio="none">
-            <defs>
-              <pattern id="se-sparkles" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-                <circle cx="40" cy="40" r="1.5" fill="white" opacity="0.15" />
-                <circle cx="15" cy="20" r="1" fill="white" opacity="0.1" />
-                <circle cx="65" cy="60" r="1" fill="white" opacity="0.1" />
-                <circle cx="25" cy="65" r="0.8" fill="white" opacity="0.08" />
-                <circle cx="55" cy="15" r="0.8" fill="white" opacity="0.08" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#se-sparkles)" />
-          </svg>
-
-          {/* Angled bottom edge */}
-          <div className="absolute bottom-0 left-0 right-0 h-12 sm:h-16 bg-midnight"
-            style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }}
-          />
-
-          <div className="relative z-10 text-center px-6 sm:px-10">
+          <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6 sm:px-10">
             <h2 className="font-bebas-neue font-bold text-6xl sm:text-7xl lg:text-8xl tracking-widest leading-none uppercase text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
               {heroTitle}
             </h2>

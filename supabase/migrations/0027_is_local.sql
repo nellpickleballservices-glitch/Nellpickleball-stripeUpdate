@@ -102,20 +102,42 @@ BEGIN
     hashtextextended(p_session_id::text || ':' || p_date::text, 0)
   );
 
-  v_taken := public.session_taken_count(p_session_id, p_date);
-  IF v_taken >= v_session.capacity THEN
-    RAISE EXCEPTION 'SESSION_FULL';
-  END IF;
-
+  -- Block if already paid
   IF EXISTS (
     SELECT 1 FROM public.session_signups s
     WHERE s.session_id = p_session_id
       AND s.session_date = p_date
       AND lower(s.email) = lower(p_email)
-      AND s.payment_status IN ('pending', 'paid')
-      AND (s.hold_expires_at IS NULL OR s.hold_expires_at > now())
+      AND s.payment_status = 'paid'
   ) THEN
     RAISE EXCEPTION 'ALREADY_SIGNED_UP';
+  END IF;
+
+  -- Block if already has a cash pending signup (no hold expiry = confirmed cash)
+  IF EXISTS (
+    SELECT 1 FROM public.session_signups s
+    WHERE s.session_id = p_session_id
+      AND s.session_date = p_date
+      AND lower(s.email) = lower(p_email)
+      AND s.payment_status = 'pending'
+      AND s.hold_expires_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'ALREADY_SIGNED_UP';
+  END IF;
+
+  -- Cancel any abandoned Stripe holds so the user can re-book
+  -- Done BEFORE capacity check so the freed spot is counted correctly
+  UPDATE public.session_signups
+  SET payment_status = 'cancelled', hold_expires_at = NULL, updated_at = now()
+  WHERE session_id = p_session_id
+    AND session_date = p_date
+    AND lower(email) = lower(p_email)
+    AND payment_status = 'pending'
+    AND hold_expires_at IS NOT NULL;
+
+  v_taken := public.session_taken_count(p_session_id, p_date);
+  IF v_taken >= v_session.capacity THEN
+    RAISE EXCEPTION 'SESSION_FULL';
   END IF;
 
   -- Determine if booker is a verified local
@@ -130,7 +152,7 @@ BEGIN
   IF v_is_local THEN
     v_final_price := v_session.price_cents;
   ELSE
-    SELECT coalesce((value)::int, 0) INTO v_surcharge_pct
+    SELECT coalesce((value#>>'{}')::int, 0) INTO v_surcharge_pct
     FROM public.app_config
     WHERE key = 'tourist_surcharge_pct';
 
