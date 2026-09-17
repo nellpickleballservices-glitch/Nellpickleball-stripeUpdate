@@ -7,6 +7,7 @@ import { SpecialEventSignupForm } from '@/components/public/SpecialEventSignupFo
 import { getPublicSpecialEventAction } from '@/app/actions/special-events'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { cancelPendingSpecialEventSignupAction } from '@/app/actions/special-event-signup'
 import { isStripeConfigured } from '@/lib/stripe'
 import { formatSessionDate, formatSessionTimeRange, formatPrice } from '@/lib/sessions'
 import type { Metadata } from 'next'
@@ -43,6 +44,12 @@ export default async function SpecialEventDetailPage({ params, searchParams }: P
   const { canceled } = await searchParams
   const locale = await getLocale()
   const t = await getTranslations('SpecialEvents')
+
+  // If the user came back from Stripe without paying, cancel their pending
+  // signup so the spot is released immediately (not after the 30-min hold).
+  if (canceled) {
+    await cancelPendingSpecialEventSignupAction(id)
+  }
 
   const result = await getPublicSpecialEventAction(id)
   if (!result) notFound()

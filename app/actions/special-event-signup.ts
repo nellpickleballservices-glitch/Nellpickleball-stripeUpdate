@@ -158,6 +158,31 @@ export async function createSpecialEventSignupAction(
   }
 }
 
+/**
+ * Cancel a user's pending (unpaid) special-event signup so the spot is
+ * released immediately instead of waiting for the Stripe hold to expire.
+ * Called server-side when the detail page loads with ?canceled=1.
+ */
+export async function cancelPendingSpecialEventSignupAction(eventId: string): Promise<void> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const email = user.email!.toLowerCase()
+
+  // Only cancel rows that are still pending with an active hold (i.e. Stripe
+  // signups that were never completed).  Cash signups don't have a hold.
+  await supabaseAdmin
+    .from('special_event_signups')
+    .update({ payment_status: 'cancelled', hold_expires_at: null, updated_at: new Date().toISOString() })
+    .eq('event_id', eventId)
+    .eq('email', email)
+    .eq('payment_status', 'pending')
+    .not('hold_expires_at', 'is', null)
+
+  revalidateTag(SPECIAL_EVENTS_TAG, { expire: 0 })
+}
+
 /** Confirmation-page lookup. */
 export async function getSpecialEventSignupSummaryAction(signupId: string): Promise<{
   status: string
