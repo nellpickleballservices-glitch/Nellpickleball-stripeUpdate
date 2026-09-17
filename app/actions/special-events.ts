@@ -1,8 +1,7 @@
 'use server'
 
-import { unstable_cache } from 'next/cache'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { SPECIAL_EVENTS_TAG, type SpecialEvent } from '@/lib/types/special-events'
+import type { SpecialEvent } from '@/lib/types/special-events'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -10,24 +9,20 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // Reads
 // ─────────────────────────────────────────────────────────────────────────
 
-const fetchPublishedSpecialEvents = unstable_cache(
-  async (): Promise<SpecialEvent[]> => {
-    const { data, error } = await supabaseAdmin
-      .from('special_events')
-      .select('*')
-      .eq('is_published', true)
-      .order('sort_order', { ascending: true })
-      .order('event_date', { ascending: true })
+async function fetchPublishedSpecialEvents(): Promise<SpecialEvent[]> {
+  const { data, error } = await supabaseAdmin
+    .from('special_events')
+    .select('*')
+    .eq('is_published', true)
+    .order('sort_order', { ascending: true })
+    .order('event_date', { ascending: true })
 
-    if (error) {
-      console.error('[special-events] getPublishedSpecialEvents error:', error.message)
-      return []
-    }
-    return (data ?? []) as SpecialEvent[]
-  },
-  ['published-special-events'],
-  { tags: [SPECIAL_EVENTS_TAG], revalidate: 300 }
-)
+  if (error) {
+    console.error('[special-events] getPublishedSpecialEvents error:', error.message)
+    return []
+  }
+  return (data ?? []) as SpecialEvent[]
+}
 
 export interface SpecialEventWithTaken {
   event: SpecialEvent
