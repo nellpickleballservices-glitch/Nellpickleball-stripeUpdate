@@ -36,6 +36,8 @@ export interface SpecialEventWithTaken {
 }
 
 async function getTaken(eventId: string): Promise<number> {
+  // Count only paid signups and pending cash signups (Stripe signups are
+  // only created after payment, so 'pending' here means cash-at-door).
   const { data, error } = await supabaseAdmin
     .from('special_event_signups')
     .select('payment_status, hold_expires_at')
@@ -47,10 +49,10 @@ async function getTaken(eventId: string): Promise<number> {
     return 0
   }
 
-  const now = Date.now()
   let count = 0
   for (const row of data ?? []) {
-    if (row.hold_expires_at && Date.parse(row.hold_expires_at) <= now) continue
+    // Expired holds don't count
+    if (row.hold_expires_at && Date.parse(row.hold_expires_at) <= Date.now()) continue
     count++
   }
   return count

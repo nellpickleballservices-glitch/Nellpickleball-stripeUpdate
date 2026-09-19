@@ -2,16 +2,17 @@ export type HeadingLevel = 1 | 2 | 3
 export type Side = 'left' | 'right'
 export type GalleryColumns = 2 | 3
 export type LinkStyle = 'button' | 'text'
+export type BlockVisibility = 'public' | 'paid'
 
 export type Block =
-  | { id: string; type: 'heading'; level: HeadingLevel; text: string }
-  | { id: string; type: 'paragraph'; text: string }
-  | { id: string; type: 'image'; url: string; caption: string }
-  | { id: string; type: 'image_text'; url: string; text: string; side: Side; caption: string }
-  | { id: string; type: 'gallery'; columns: GalleryColumns; images: { url: string; caption: string }[] }
-  | { id: string; type: 'quote'; text: string; author: string }
-  | { id: string; type: 'link'; text: string; url: string; style: LinkStyle; newTab: boolean }
-  | { id: string; type: 'divider' }
+  | { id: string; type: 'heading'; level: HeadingLevel; text: string; visibility?: BlockVisibility }
+  | { id: string; type: 'paragraph'; text: string; visibility?: BlockVisibility }
+  | { id: string; type: 'image'; url: string; caption: string; visibility?: BlockVisibility }
+  | { id: string; type: 'image_text'; url: string; text: string; side: Side; caption: string; visibility?: BlockVisibility }
+  | { id: string; type: 'gallery'; columns: GalleryColumns; images: { url: string; caption: string }[]; visibility?: BlockVisibility }
+  | { id: string; type: 'quote'; text: string; author: string; visibility?: BlockVisibility }
+  | { id: string; type: 'link'; text: string; url: string; style: LinkStyle; newTab: boolean; visibility?: BlockVisibility }
+  | { id: string; type: 'divider'; visibility?: BlockVisibility }
 
 export type BlockType = Block['type']
 

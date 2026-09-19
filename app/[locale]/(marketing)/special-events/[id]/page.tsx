@@ -8,7 +8,6 @@ import { ExpeditionContent } from '@/components/public/ExpeditionContent'
 import { getPublicSpecialEventAction } from '@/app/actions/special-events'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import { cancelPendingSpecialEventSignupAction } from '@/app/actions/special-event-signup'
 import { isStripeConfigured } from '@/lib/stripe'
 import { formatSessionDate, formatSessionTimeRange, formatPrice } from '@/lib/sessions'
 import { parseBlocks } from '@/lib/types/expedition-blocks'
@@ -47,11 +46,8 @@ export default async function SpecialEventDetailPage({ params, searchParams }: P
   const locale = await getLocale()
   const t = await getTranslations('SpecialEvents')
 
-  // If the user came back from Stripe without paying, cancel their pending
-  // signup so the spot is released immediately (not after the 30-min hold).
-  if (canceled) {
-    await cancelPendingSpecialEventSignupAction(id)
-  }
+  // No-op: Stripe signups are only created after payment succeeds, so
+  // there is no pending row to cancel when the user returns without paying.
 
   const result = await getPublicSpecialEventAction(id)
   if (!result) notFound()
@@ -61,14 +57,15 @@ export default async function SpecialEventDetailPage({ params, searchParams }: P
   const title = locale === 'en' ? event.title_en : event.title_es
   const description = locale === 'en' ? event.description_en : event.description_es
   const detailsRaw = locale === 'en' ? event.details_en : event.details_es
-  const blocks = parseBlocks(detailsRaw)
+  const allBlocks = parseBlocks(detailsRaw)
   const images = event.image_urls?.length ? event.image_urls : event.image_url ? [event.image_url] : []
 
   const dateLabel = formatSessionDate(event.event_date, locale)
   const timeLabel = formatSessionTimeRange(event.start_time, event.end_time, locale)
 
-  // Get logged-in user info for the signup form
+  // Get logged-in user info for the signup form + check if they've paid
   let formUser: { name: string; email: string } | null = null
+  let hasPaid = false
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -80,8 +77,23 @@ export default async function SpecialEventDetailPage({ params, searchParams }: P
         .single()
       const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email.split('@')[0]
       formUser = { name, email: user.email }
+
+      // Check if user has a paid signup for this event
+      const { data: paidSignup } = await supabaseAdmin
+        .from('special_event_signups')
+        .select('id')
+        .eq('event_id', event.id)
+        .ilike('email', user.email)
+        .eq('payment_status', 'paid')
+        .maybeSingle()
+      hasPaid = !!paidSignup
     }
   } catch { /* not logged in */ }
+
+  // Filter blocks: show all to paid users, only public blocks to others
+  const blocks = hasPaid
+    ? allBlocks
+    : allBlocks.filter((b) => (b.visibility ?? 'public') === 'public')
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.nellpickleball.com'
   const eventSchema = {

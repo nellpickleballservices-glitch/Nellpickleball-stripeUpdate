@@ -57,42 +57,42 @@ export async function createSpecialEventSignupAction(
     return { success: false, error: 'payment_unavailable' }
   }
 
-  const { data, error } = await supabaseAdmin.rpc('book_special_event_spot', {
-    p_event_id: input.event_id,
-    p_name: name,
-    p_email: email,
-    p_phone: null,
-    p_payment_method: input.payment_method,
-    p_hold_minutes: input.payment_method === 'stripe' ? STRIPE_HOLD_MINUTES : null,
-  })
-
-  if (error) {
-    const code = bookingErrorMessage(error.message)
-    if (code === 'generic') {
-      console.error('[special-events] book_special_event_spot error:', error.message)
-    }
-    return { success: false, error: code }
-  }
-
-  const signup = (Array.isArray(data) ? data[0] : data) as
-    | { id: string; amount_cents: number; currency: string }
-    | null
-
-  if (!signup?.id) {
-    console.error('[special-events] book_special_event_spot returned no row')
-    return { success: false, error: 'generic' }
-  }
-
-  // Fetch event details for email/checkout
-  const { data: event } = await supabaseAdmin
-    .from('special_events')
-    .select('title_en, title_es, event_date, start_time, end_time')
-    .eq('id', input.event_id)
-    .single()
-
-  const eventTitle = event?.title_en ?? event?.title_es ?? 'Special Event'
-
+  // ── Cash path: book immediately (no online payment needed) ──
   if (input.payment_method === 'cash') {
+    const { data, error } = await supabaseAdmin.rpc('book_special_event_spot', {
+      p_event_id: input.event_id,
+      p_name: name,
+      p_email: email,
+      p_phone: null,
+      p_payment_method: 'cash',
+      p_hold_minutes: null,
+    })
+
+    if (error) {
+      const code = bookingErrorMessage(error.message)
+      if (code === 'generic') {
+        console.error('[special-events] book_special_event_spot error:', error.message)
+      }
+      return { success: false, error: code }
+    }
+
+    const signup = (Array.isArray(data) ? data[0] : data) as
+      | { id: string; amount_cents: number; currency: string }
+      | null
+
+    if (!signup?.id) {
+      console.error('[special-events] book_special_event_spot returned no row')
+      return { success: false, error: 'generic' }
+    }
+
+    const { data: event } = await supabaseAdmin
+      .from('special_events')
+      .select('title_en, title_es, event_date, start_time, end_time')
+      .eq('id', input.event_id)
+      .single()
+
+    const eventTitle = event?.title_en ?? event?.title_es ?? 'Special Event'
+
     void sendSpecialEventSignupEmails({
       eventTitle,
       eventDate: event?.event_date ?? '',
@@ -108,7 +108,40 @@ export async function createSpecialEventSignupAction(
     return { success: true, kind: 'cash', signupId: signup.id }
   }
 
-  // Stripe path
+  // ── Stripe path: validate only, defer signup to webhook ──
+  // Validate capacity, duplicates, and get price without creating a signup row.
+  // The actual signup is created by the Stripe webhook after payment succeeds.
+  const { data: valData, error: valError } = await supabaseAdmin.rpc('validate_special_event_booking', {
+    p_event_id: input.event_id,
+    p_email: email,
+    p_payment_method: 'stripe',
+  })
+
+  if (valError) {
+    const code = bookingErrorMessage(valError.message)
+    if (code === 'generic') {
+      console.error('[special-events] validate_special_event_booking error:', valError.message)
+    }
+    return { success: false, error: code }
+  }
+
+  const validation = (Array.isArray(valData) ? valData[0] : valData) as
+    | { amount_cents: number; currency: string }
+    | null
+
+  if (!validation) {
+    console.error('[special-events] validate_special_event_booking returned no row')
+    return { success: false, error: 'generic' }
+  }
+
+  const { data: event } = await supabaseAdmin
+    .from('special_events')
+    .select('title_en, title_es, event_date, start_time, end_time')
+    .eq('id', input.event_id)
+    .single()
+
+  const eventTitle = event?.title_en ?? event?.title_es ?? 'Special Event'
+
   try {
     const stripe = getStripe()
     const origin = siteOrigin()
@@ -120,8 +153,8 @@ export async function createSpecialEventSignupAction(
         {
           quantity: 1,
           price_data: {
-            currency: signup.currency,
-            unit_amount: signup.amount_cents,
+            currency: validation.currency,
+            unit_amount: validation.amount_cents,
             product_data: {
               name: eventTitle,
               description: `${event?.event_date ?? ''} · ${(event?.start_time ?? '').slice(0, 5)}–${(event?.end_time ?? '').slice(0, 5)}`,
@@ -130,29 +163,23 @@ export async function createSpecialEventSignupAction(
         },
       ],
       metadata: {
-        signup_id: signup.id,
         event_id: input.event_id,
         signup_type: 'special_event',
+        // Pass user info so the webhook can create the signup row
+        user_name: name,
+        user_email: email,
+        amount_cents: String(validation.amount_cents),
+        currency: validation.currency,
       },
       expires_at: Math.floor(Date.now() / 1000) + STRIPE_HOLD_MINUTES * 60,
-      success_url: `${origin}/special-events/success?signup=${signup.id}`,
+      success_url: `${origin}/special-events/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/special-events/${input.event_id}?canceled=1`,
     })
 
     if (!checkout.url) throw new Error('Stripe returned no checkout URL')
 
-    await supabaseAdmin
-      .from('special_event_signups')
-      .update({ stripe_session_id: checkout.id, updated_at: new Date().toISOString() })
-      .eq('id', signup.id)
-
     return { success: true, kind: 'stripe', checkoutUrl: checkout.url }
   } catch (err) {
-    await supabaseAdmin
-      .from('special_event_signups')
-      .update({ payment_status: 'cancelled', hold_expires_at: null })
-      .eq('id', signup.id)
-
     console.error('[special-events] stripe checkout error:', err instanceof Error ? err.message : err)
     return { success: false, error: 'payment_unavailable' }
   }
@@ -183,8 +210,11 @@ export async function cancelPendingSpecialEventSignupAction(eventId: string): Pr
   revalidateTag(SPECIAL_EVENTS_TAG, { expire: 0 })
 }
 
-/** Confirmation-page lookup. */
-export async function getSpecialEventSignupSummaryAction(signupId: string): Promise<{
+/** Confirmation-page lookup. Supports lookup by signup ID (cash) or Stripe session ID. */
+export async function getSpecialEventSignupSummaryAction(
+  signupId?: string,
+  stripeSessionId?: string,
+): Promise<{
   status: string
   eventTitle: string
   eventDate: string
@@ -192,13 +222,20 @@ export async function getSpecialEventSignupSummaryAction(signupId: string): Prom
   endTime: string
   paymentMethod: string
 } | null> {
-  if (!UUID_RE.test(signupId)) return null
+  if (!signupId && !stripeSessionId) return null
+  if (signupId && !UUID_RE.test(signupId)) return null
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('special_event_signups')
     .select('payment_status, payment_method, special_events(title_en, title_es, event_date, start_time, end_time)')
-    .eq('id', signupId)
-    .maybeSingle()
+
+  if (signupId) {
+    query = query.eq('id', signupId)
+  } else {
+    query = query.eq('stripe_session_id', stripeSessionId!)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error || !data) return null
 

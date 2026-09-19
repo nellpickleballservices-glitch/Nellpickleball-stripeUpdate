@@ -159,9 +159,9 @@ async function handleExpired(checkout: Stripe.Checkout.Session): Promise<void> {
 // ── Special Event handlers ──
 
 async function handleSpecialEventCompleted(checkout: Stripe.Checkout.Session): Promise<void> {
-  const signupId = checkout.metadata?.signup_id
-  if (!signupId) {
-    console.error('[session-webhook] special event completed with no signup_id')
+  const eventId = checkout.metadata?.event_id
+  if (!eventId) {
+    console.error('[session-webhook] special event completed with no event_id')
     return
   }
 
@@ -172,57 +172,73 @@ async function handleSpecialEventCompleted(checkout: Stripe.Checkout.Session): P
       ? checkout.payment_intent
       : checkout.payment_intent?.id ?? null
 
-  const { data, error } = await supabaseAdmin
+  const name = checkout.metadata?.user_name ?? 'Guest'
+  const email = checkout.metadata?.user_email ?? checkout.customer_email ?? ''
+  const amountCents = Number(checkout.metadata?.amount_cents ?? 0)
+  const currency = checkout.metadata?.currency ?? 'usd'
+
+  if (!email) {
+    console.error('[session-webhook] special event completed with no email')
+    return
+  }
+
+  // Guard against duplicate webhooks: if a paid signup already exists for
+  // this event + email, skip.
+  const { data: existing } = await supabaseAdmin
     .from('special_event_signups')
-    .update({
+    .select('id')
+    .eq('event_id', eventId)
+    .ilike('email', email)
+    .eq('payment_status', 'paid')
+    .maybeSingle()
+
+  if (existing) return // already processed
+
+  // Create the signup row now that payment is confirmed
+  const { data: signup, error } = await supabaseAdmin
+    .from('special_event_signups')
+    .insert({
+      event_id: eventId,
+      name,
+      email: email.toLowerCase(),
+      phone: null,
+      payment_method: 'stripe',
       payment_status: 'paid',
+      amount_cents: amountCents,
+      currency,
+      stripe_session_id: checkout.id,
       stripe_payment_intent: paymentIntent,
       hold_expires_at: null,
-      updated_at: new Date().toISOString(),
     })
-    .eq('id', signupId)
-    .eq('payment_status', 'pending')
-    .select('id, name, email, special_events(title_en, title_es, event_date, start_time, end_time), amount_cents, currency')
+    .select('id, name, email, amount_cents, currency')
+    .single()
 
-  if (error) throw new Error(`marking special event paid failed: ${error.message}`)
-
-  const row = data?.[0]
-  if (!row) return
+  if (error) throw new Error(`creating special event signup failed: ${error.message}`)
+  if (!signup) return
 
   revalidateTag(SPECIAL_EVENTS_TAG, { expire: 0 })
 
-  const ev = row.special_events as unknown as
-    | { title_en: string; title_es: string; event_date: string; start_time: string; end_time: string }
-    | null
+  const { data: ev } = await supabaseAdmin
+    .from('special_events')
+    .select('title_en, title_es, event_date, start_time, end_time')
+    .eq('id', eventId)
+    .single()
 
   void sendSpecialEventSignupEmails({
     eventTitle: ev?.title_en ?? ev?.title_es ?? 'Special Event',
     eventDate: ev?.event_date ?? '',
     startTime: ev?.start_time ?? '',
     endTime: ev?.end_time ?? '',
-    name: row.name,
-    email: row.email,
+    name: signup.name,
+    email: signup.email,
     paymentMethod: 'stripe',
-    amountCents: row.amount_cents,
-    currency: row.currency,
+    amountCents: signup.amount_cents,
+    currency: signup.currency,
   })
 }
 
-async function handleSpecialEventExpired(checkout: Stripe.Checkout.Session): Promise<void> {
-  const signupId = checkout.metadata?.signup_id
-  if (!signupId) return
-
-  const { error } = await supabaseAdmin
-    .from('special_event_signups')
-    .update({
-      payment_status: 'cancelled',
-      hold_expires_at: null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', signupId)
-    .eq('payment_status', 'pending')
-
-  if (error) throw new Error(`releasing special event expired hold failed: ${error.message}`)
-
-  revalidateTag(SPECIAL_EVENTS_TAG, { expire: 0 })
+async function handleSpecialEventExpired(_checkout: Stripe.Checkout.Session): Promise<void> {
+  // No-op: Stripe special-event signups are only created after payment
+  // succeeds (in handleSpecialEventCompleted), so there is no pending row
+  // to cancel when a checkout session expires.
 }

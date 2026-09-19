@@ -135,13 +135,32 @@ interface BlockCardProps {
 
 function BlockCard({ block, isFirst, isLast, uploadImage, onUpdate, onRemove, onMoveUp, onMoveDown }: BlockCardProps) {
   const t = useTranslations('Admin')
+  const visibility = block.visibility ?? 'public'
 
   return (
-    <div className="rounded-lg border border-gray-300 bg-white shadow-sm">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-        <span className="text-xs font-semibold text-midnight uppercase tracking-widest">
-          {t(`block_${block.type}`)}
-        </span>
+    <div className={`rounded-lg border shadow-sm ${visibility === 'paid' ? 'border-amber-300 bg-amber-50/30' : 'border-gray-300 bg-white'}`}>
+      <div className={`flex items-center justify-between px-3 py-2 border-b rounded-t-lg ${visibility === 'paid' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-midnight uppercase tracking-widest">
+            {t(`block_${block.type}`)}
+          </span>
+          <button
+            type="button"
+            onClick={() => onUpdate({ visibility: visibility === 'public' ? 'paid' : 'public' } as Partial<Block>)}
+            title={visibility === 'public' ? t('blockVisibilityPublic') : t('blockVisibilityPaid')}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide border transition-colors ${
+              visibility === 'paid'
+                ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200'
+                : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+            }`}
+          >
+            {visibility === 'paid' ? (
+              <><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z" clipRule="evenodd" /></svg>{t('blockPaidOnly')}</>
+            ) : (
+              <><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" /><path fillRule="evenodd" d="M1.38 8.28a.87.87 0 0 1 0-.566 7.003 7.003 0 0 1 13.24.002.87.87 0 0 1 0 .566A7.003 7.003 0 0 1 1.38 8.28ZM11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" clipRule="evenodd" /></svg>{t('blockPublic')}</>
+            )}
+          </button>
+        </div>
         <div className="flex items-center gap-1">
           <button type="button" onClick={onMoveUp} disabled={isFirst} aria-label="Move up"
             className="grid place-items-center w-7 h-7 rounded text-gray-500 hover:text-gray-900 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">↑</button>

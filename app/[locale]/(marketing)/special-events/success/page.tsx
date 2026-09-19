@@ -6,15 +6,20 @@ import { formatSessionDate, formatSessionTimeRange } from '@/lib/sessions'
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
-  searchParams: Promise<{ signup?: string }>
+  searchParams: Promise<{ signup?: string; session_id?: string }>
 }
 
 export default async function SpecialEventSuccessPage({ searchParams }: PageProps) {
-  const { signup } = await searchParams
+  const { signup, session_id } = await searchParams
   const locale = await getLocale()
   const t = await getTranslations('SpecialEvents')
 
-  const summary = signup ? await getSpecialEventSignupSummaryAction(signup) : null
+  // Support both old signup-id param (cash) and new session_id param (Stripe)
+  const summary = session_id
+    ? await getSpecialEventSignupSummaryAction(undefined, session_id)
+    : signup
+      ? await getSpecialEventSignupSummaryAction(signup)
+      : null
   const settled = summary?.status === 'paid'
 
   return (

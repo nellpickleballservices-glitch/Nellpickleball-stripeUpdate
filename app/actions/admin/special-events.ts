@@ -369,10 +369,18 @@ export async function deleteSpecialEventSignupAction(id: string): Promise<{ succ
 // ─────────────────────────────────────────────────────────────────────────
 
 export async function uploadSpecialEventImageAction(formData: FormData): Promise<{ url: string }> {
+  console.log('[special-events] upload: action called')
   await requireAdmin()
+  console.log('[special-events] upload: admin check passed')
 
   const { uploadToBlob } = await import('@/lib/blob')
   const file = formData.get('file') as File
+  if (!file || file.size === 0) {
+    console.error('[special-events] upload: no file or empty file')
+    throw new Error('No file provided')
+  }
+  console.log('[special-events] upload: file=%s size=%d type=%s', file.name, file.size, file.type)
   const url = await uploadToBlob(file, { folder: 'special-events' })
+  console.log('[special-events] upload: success url=%s', url)
   return { url }
 }
